@@ -1,0 +1,18 @@
+event A{
+	integer amount;
+}
+
+monitor foo
+{
+    import "countPlugin" as counter;
+    action onload()
+    {
+	monitor.subscribe("fooevts");
+
+        on all A() as a {
+            counter.increment(a.amount);
+            print "Current count: " + counter.getCount().toString();
+        }
+	send A(1) to "fooevts";
+    }
+}
