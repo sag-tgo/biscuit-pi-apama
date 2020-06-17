@@ -1,8 +1,0 @@
-eplPlugins:
-  sensorPlugin:
-    pythonFile: ${PARENT_DIR}/countplugin.py
-    class: SensorPlugin
-correlator:
-  initialization:
-    list:
-      - foo.mon

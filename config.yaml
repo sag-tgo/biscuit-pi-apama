@@ -1,0 +1,8 @@
+eplPlugins:
+  sensorPlugin:
+    pythonFile: src/python/biscuit-robot.py
+    class: BiscuitRobot
+correlator:
+  initialization:
+    list:
+      - src/epl/ColourSensor.mon
