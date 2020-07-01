@@ -51,7 +51,7 @@ class BiscuitRobot(EPLPluginBase):
 
         self.COLOUR_SENSOR_CHANNEL = "COLOUR_CHANNEL"
 
-	@EPLAction("sortBiscuits", "action<>")
+    @EPLAction("sortBiscuits", "action<>")
     def sortBiscuits(self):
         while True:
             colour = self.bp.get_sensor(self.COLOUR_SENSOR_PORT)
@@ -60,9 +60,9 @@ class BiscuitRobot(EPLPluginBase):
             # TODO: 
             # motor reading etc 
 
-
-
-
+    @EPLAction("testAction", "action<>")
+    def sortBiscuits(self):
+        getLogger().info("TEST!!!11111!!!1!!!!")
 
 
 """

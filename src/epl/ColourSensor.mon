@@ -50,7 +50,10 @@ monitor ColourSensor {
 			// move biscuit
 		} */
 
-		sensorPlugin.sortBiscuits(); // infinite loop + send sensor events
+		//sensorPlugin.sortBiscuits(); // infinite loop + send sensor events
+
+		sensorPlugin.testAction();
+		sensorPlugin.testAction();
 
 	}
 }
