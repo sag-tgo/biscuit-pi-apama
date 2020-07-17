@@ -12,21 +12,22 @@
 # Hardware: Connect an EV3 or NXT touch sensor to BrickPi3 Port 1.
 # 
 # Results:  When you run this program, you should see a 0 when the touch sensor is not pressed, and a 1 when the touch sensor is pressed.
-
 from __future__ import print_function # use python 3 syntax but make it compatible with python 2
 from __future__ import division       #                           ''
 from apama.eplplugin import EPLPluginBase
 from apama.eplplugin import EPLAction
-from apama.eplplugin import Correlator
 
+import spidev
 import time     # import the time library for the sleep function
 import brickpi3 # import the BrickPi3 drivers
 
 class BiscuitRobot(EPLPluginBase):
 
-    def __init__(self):
-        super(BiscuitRobot, self).__init__()
+    def __init__(self, init):
+        super(BiscuitRobot, self).__init__(init)
+        self.getLogger().info("defining self.bp...")
         self.bp = brickpi3.BrickPi3() # Create an instance of the BrickPi3 class. bp will be the BrickPi3 object.
+        self.getLogger().info(self.bp)
 
         # Configure sensor/port mappings
         TOUCH_SENSOR1_PORT = self.bp.PORT_3  # limit sensor
@@ -40,9 +41,9 @@ class BiscuitRobot(EPLPluginBase):
         MOTOR_ARM_ROTATE   = self.bp.PORT_C
 
         # Configure BrickPi sensors
-        self.bp.set_sensor_type(TOUCH_SENSOR1_PORT, bp.SENSOR_TYPE.EV3_TOUCH)
-        self.bp.set_sensor_type(GYRO_SENSOR_PORT, bp.SENSOR_TYPE.EV3_GYRO_ABS_DPS)
-        self.bp.set_sensor_type(COLOUR_SENSOR_PORT, bp.SENSOR_TYPE.EV3_COLOR_COLOR)
+        self.bp.set_sensor_type(TOUCH_SENSOR1_PORT, self.bp.SENSOR_TYPE.EV3_TOUCH)
+        self.bp.set_sensor_type(GYRO_SENSOR_PORT, self.bp.SENSOR_TYPE.EV3_GYRO_ABS_DPS)
+        self.bp.set_sensor_type(COLOUR_SENSOR_PORT, self.bp.SENSOR_TYPE.EV3_COLOR_COLOR)
 
         # Configure BrickPi motors
         # TODO!
@@ -51,7 +52,7 @@ class BiscuitRobot(EPLPluginBase):
 
         self.COLOUR_SENSOR_CHANNEL = "COLOUR_CHANNEL"
 
-    @EPLAction("sortBiscuits", "action<>")
+    @EPLAction("action<>")
     def sortBiscuits(self):
         while True:
             colour = self.bp.get_sensor(self.COLOUR_SENSOR_PORT)
@@ -60,9 +61,9 @@ class BiscuitRobot(EPLPluginBase):
             # TODO: 
             # motor reading etc 
 
-    @EPLAction("testAction", "action<>")
-    def sortBiscuits(self):
-        getLogger().info("TEST!!!11111!!!1!!!!")
+    @EPLAction("action<>")
+    def testAction(self):
+        self.getLogger().info("TEST!!!11111!!!1!!!!")
 
 
 """

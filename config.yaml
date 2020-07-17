@@ -1,7 +1,10 @@
 eplPlugins:
-  sensorPlugin:
+  robotPlugin:
     pythonFile: src/python/biscuit-robot.py
     class: BiscuitRobot
+    pythonPath: 
+      - /home/pi/Dexter/BrickPi3/Software/Python 
+      - /home/pi/.local/lib/python3.7/site-packages
 correlator:
   initialization:
     list:

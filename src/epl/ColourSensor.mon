@@ -16,11 +16,13 @@ event ColourSensorChanged {
 	string newColour;
 }
 
-event ArmStatus{
-	boolean isInPosition;
+event ArmStatus {
+	// boolean isInPosition;
 }
 
 monitor ColourSensor {
+
+	import "robotPlugin" as robotPlugin;
 
 	string COLOUR_SENSOR_CHANNEL := "COLOUR_CHANNEL";
 
@@ -28,7 +30,7 @@ monitor ColourSensor {
 	
 
 	action onload() {
-		import "sensorPlugin" as sensorPlugin;
+		
 
 		monitor.subscribe(COLOUR_SENSOR_CHANNEL);
 		log "ColourSensor::onload()" at INFO;
@@ -52,8 +54,8 @@ monitor ColourSensor {
 
 		//sensorPlugin.sortBiscuits(); // infinite loop + send sensor events
 
-		sensorPlugin.testAction();
-		sensorPlugin.testAction();
+		robotPlugin.testAction();
+		robotPlugin.testAction();
 
 	}
 }
