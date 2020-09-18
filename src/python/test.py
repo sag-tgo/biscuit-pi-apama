@@ -1,13 +1,10 @@
-
+# Class that we want to invoke methods on by name
 class MockBrickPi:
 	def testOneParam(self, arg):
 		return arg
 
 	def testArgs(self, *args):
 		return args
-
-	def testKwArgs(self, **kwargs):
-		return kwargs
 
 	def get42(self):
 		return 42
@@ -19,18 +16,19 @@ class MockBrickPi:
 		return x + y
 
 
+# Class to test invoking methods by name on a MockBrickPi instance.
 class TestClass:
 	def __init__(self):
 		self.mbp = MockBrickPi()
+		# Print available method names for this object (filtering out 'magic' objects)
 		methodNames = [m for m in dir(self.mbp) if not m.endswith('__')]
 		print("Available method names: " + ", ".join(methodNames))
 
 	def doBPMethod(self, methodname, *args):
-		isMethodNameSafe = not (methodname.startswith('__') or methodname.endswith('__'))
-		isCallable = callable(getattr(self.mbp, methodname, False))
+		isMethodNameSafe = not methodname.endswith('__')  # filter out 'magic' objects
+		method = getattr(self.mbp, methodname, None)
+		isCallable = callable(method)
 		if isMethodNameSafe and isCallable:
-			method = getattr(self.mbp, methodname)
-
 			if args:
 				return method(*args)
 			else:
@@ -41,11 +39,12 @@ class TestClass:
 			raise Exception("Unknown method name: " + methodname)
 
 
+# Create an instance of TestClass and try invoking MockBrickPi methods by name.
 o = TestClass()
 methodTuples = [
 	("testOneParam", [None]),
-	("get42", [None]),
-	("getList", [None]),
+	("get42", []),
+	("getList", []),
 	("testOneParam", [1]),
 	("testOneParam", ["Alan!"]),
 	("testOneParam", [[1, 2, 3]]),
@@ -57,10 +56,11 @@ methodTuples = [
 	("__init__", [None]),  # Method name not permitted: __init__
 	("get42", ["nope!"])  # takes 1 positional argument but 2 were given
 ]
-for k, v in methodTuples:
+# For each method and args pair, invoke that method and print out methodName(params) = result
+for methodName, args in methodTuples:
 	try:
-		message = f'{k}({v})'
-		result = o.doBPMethod(k, *v)
+		message = f'{methodName}({args})'
+		result = o.doBPMethod(methodName, *args)
 		message = message + f' = {result}'
 		print(message)
 	except Exception as e:
