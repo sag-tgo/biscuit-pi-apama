@@ -1,10 +1,13 @@
 
 class MockBrickPi:
-	def testClassMethod(self, **kwargs):
-		print("hello from testClassMethod")
+	def testOneParam(self, arg):
+		return arg
 
-	def testClassMethod2(self, **kwargs):
-		print("hello from testClassMethod2")
+	def testArgs(self, *args):
+		return args
+
+	def testKwArgs(self, **kwargs):
+		return kwargs
 
 	def get42(self):
 		return 42
@@ -15,20 +18,21 @@ class MockBrickPi:
 	def add(self, x, y):
 		return x + y
 
+
 class TestClass:
 	def __init__(self):
 		self.mbp = MockBrickPi()
 		methodNames = [m for m in dir(self.mbp) if not m.endswith('__')]
 		print("Available method names: " + ", ".join(methodNames))
 
-	def doBPMethod(self, methodname, params=None):
+	def doBPMethod(self, methodname, *args):
 		isMethodNameSafe = not (methodname.startswith('__') or methodname.endswith('__'))
 		isCallable = callable(getattr(self.mbp, methodname, False))
 		if isMethodNameSafe and isCallable:
 			method = getattr(self.mbp, methodname)
 
-			if params:
-				return method(params)
+			if args:
+				return method(*args)
 			else:
 				return method()
 		elif not isMethodNameSafe:
@@ -39,19 +43,24 @@ class TestClass:
 
 o = TestClass()
 methodTuples = [
-	("testClassMethod", None),
-	("testClassMethod2", None),
-	("get42", None),
-	("getList", None),
+	("testOneParam", [None]),
+	("get42", [None]),
+	("getList", [None]),
+	("testOneParam", [1]),
+	("testOneParam", ["Alan!"]),
+	("testOneParam", [[1, 2, 3]]),
+	("testOneParam", [{"sky": "blue"}]),
+	("testArgs", [["one", 2]]),
+	("add", [2, 2]),
 	# Expected errors:
-	("blah", None),
-	("__init__", None),
-	("get42", "nope!")
+	("blah", [None]),  # Unknown method name: blah
+	("__init__", [None]),  # Method name not permitted: __init__
+	("get42", ["nope!"])  # takes 1 positional argument but 2 were given
 ]
 for k, v in methodTuples:
 	try:
 		message = f'{k}({v})'
-		result = o.doBPMethod(k, v)
+		result = o.doBPMethod(k, *v)
 		message = message + f' = {result}'
 		print(message)
 	except Exception as e:
