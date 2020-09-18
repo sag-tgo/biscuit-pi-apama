@@ -6,6 +6,14 @@ class MockBrickPi:
 	def testClassMethod2(self, **kwargs):
 		print("hello from testClassMethod2")
 
+	def get42(self):
+		return 42
+
+	def getList(self):
+		return [self.get42()]
+
+	def add(self, x, y):
+		return x + y
 
 class TestClass:
 	def __init__(self):
@@ -20,10 +28,8 @@ class TestClass:
 			method = getattr(self.mbp, methodname)
 
 			if params:
-				print('calling ' + methodname + ' with params ' + str(params))
 				return method(params)
 			else:
-				print('calling ' + methodname + '()')
 				return method()
 		elif not isMethodNameSafe:
 			raise Exception("Method name not permitted: " + methodname)
@@ -32,14 +38,21 @@ class TestClass:
 
 
 o = TestClass()
-o.doBPMethod("testClassMethod")
-o.doBPMethod("testClassMethod2")
-try:
-	o.doBPMethod("blah")
-except Exception as e:
-	print(e)
-
-try:
-	o.doBPMethod("__init__")
-except Exception as e:
-	print(e)
+methodTuples = [
+	("testClassMethod", None),
+	("testClassMethod2", None),
+	("get42", None),
+	("getList", None),
+	# Expected errors:
+	("blah", None),
+	("__init__", None),
+	("get42", "nope!")
+]
+for k, v in methodTuples:
+	try:
+		message = f'{k}({v})'
+		result = o.doBPMethod(k, v)
+		message = message + f' = {result}'
+		print(message)
+	except Exception as e:
+		print("ERROR:", e)
