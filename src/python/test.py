@@ -18,22 +18,29 @@ class MockBrickPi:
 
 # Class to test invoking methods by name on a MockBrickPi instance.
 class TestClass:
+	# These Map method names onto bound methods of MockBrickPi 
+	callables = {}
+	restricted = {}
+
 	def __init__(self):
 		self.mbp = MockBrickPi()
+
+		# Establish the methods can be called by name via doBPMethod
+		for m in dir(self.mbp):
+			method = getattr(self.mbp, m, None)	
+			if method and callable(method):
+				if not m.endswith('__'):
+					self.callables[m]=method
+				else:
+					self.restricted[m]=method
+		
 		# Print available method names for this object (filtering out 'magic' objects)
-		methodNames = [m for m in dir(self.mbp) if not m.endswith('__')]
-		print("Available method names: " + ", ".join(methodNames))
+		print("Available method names: " + ", ".join(self.callables.keys()))
 
 	def doBPMethod(self, methodname, *args):
-		isMethodNameSafe = not methodname.endswith('__')  # filter out 'magic' objects
-		method = getattr(self.mbp, methodname, None)
-		isCallable = callable(method)
-		if isMethodNameSafe and isCallable:
-			if args:
-				return method(*args)
-			else:
-				return method()
-		elif not isMethodNameSafe:
+		if methodname in self.callables:
+			return self.callables[methodname](*args)
+		elif methodname in self.restricted:
 			raise Exception("Method name not permitted: " + methodname)
 		else:
 			raise Exception("Unknown method name: " + methodname)
