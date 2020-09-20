@@ -18,9 +18,8 @@ class MockBrickPi:
 
 # Class to test invoking methods by name on a MockBrickPi instance.
 class TestClass:
-	# These Map method names onto bound methods of MockBrickPi 
-	callables = {}
-	restricted = {}
+	callables  = dict()		# maps method names onto bound methods of MockBrickPi 
+	restricted = set()		# set of restricted method names
 
 	def __init__(self):
 		self.mbp = MockBrickPi()
@@ -32,7 +31,7 @@ class TestClass:
 				if not m.endswith('__'):
 					self.callables[m]=method
 				else:
-					self.restricted[m]=method
+					self.restricted.add(m)
 		
 		# Print available method names for this object (filtering out 'magic' objects)
 		print("Available method names: " + ", ".join(self.callables.keys()))
