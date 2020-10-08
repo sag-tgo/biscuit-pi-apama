@@ -10,4 +10,5 @@ correlator:
   initialization:
     list:
       - ${APAMA_HOME}/monitors/AnyExtractor.mon
+      - src/epl/EventDefs.mon
       - src/epl/BrickPi.mon
