@@ -1,11 +1,12 @@
 eplPlugins:
-  robotPlugin:
-    pythonFile: src/python/biscuit-robot.py
-    class: BiscuitRobot
-    pythonPath: 
-      - /home/pi/Dexter/BrickPi3/Software/Python 
+  brickpiPlugin:
+    pythonFile: src/python/brickpi-epl-plugin.py
+    class: BrickPiPlugin
+    pythonPath:
+      - /home/pi/Dexter/BrickPi3/Software/Python
       - /home/pi/.local/lib/python3.7/site-packages
 correlator:
+  pythonSupport: true
   initialization:
     list:
-      - src/epl/ColourSensor.mon
+      - src/epl/BrickPi.mon
