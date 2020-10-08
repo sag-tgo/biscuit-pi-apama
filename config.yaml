@@ -9,4 +9,5 @@ correlator:
   pythonSupport: true
   initialization:
     list:
+      - ${APAMA_HOME}/monitors/AnyExtractor.mon
       - src/epl/BrickPi.mon

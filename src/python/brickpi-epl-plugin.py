@@ -21,6 +21,8 @@ class BrickPiPlugin(EPLPluginBase):
         self.bp = brickpi3.BrickPi3() # Create an instance of the BrickPi3 class. bp will be the BrickPi3 object.
         self.getLogger().info(self.bp)
 
+        config = {}
+
         # Configure sensor/port mappings
         TOUCH_SENSOR1_PORT = self.bp.PORT_3  # limit sensor
         TOUCH_SENSOR2_PORT = self.bp.PORT_4  # e-stop sensor
@@ -36,17 +38,17 @@ class BrickPiPlugin(EPLPluginBase):
         self.bp.set_sensor_type(TOUCH_SENSOR1_PORT, self.bp.SENSOR_TYPE.EV3_TOUCH)
         self.bp.set_sensor_type(GYRO_SENSOR_PORT, self.bp.SENSOR_TYPE.EV3_GYRO_ABS_DPS)
         self.bp.set_sensor_type(COLOUR_SENSOR_PORT, self.bp.SENSOR_TYPE.EV3_COLOR_COLOR)
+        config["COLOUR_SENSOR_PORT"] = COLOUR_SENSOR_PORT
+        config["LIMIT_SENSOR_PORT"] = TOUCH_SENSOR1_PORT
+        # Unused at the moment - future enhancement.
+        # config["ESTOP_SENSOR_PORT"] = TOUCH_SENSOR2_PORT
+        config["GYRO_SENSOR_PORT"] = GYRO_SENSOR_PORT
 
         # Configure BrickPi motors
         # TODO!
 
-        color = ["?", "Black", "Blue", "Green", "Yellow", "Red", "White", "Brown"]
+        self.config = config
 
-        self.COLOUR_SENSOR_CHANNEL = "COLOUR_CHANNEL"
-
-    @EPLAction("action<>")
-    def testAction(self):
-        self.getLogger().info("Hello from BrickPiPlugin!")
 
     @EPLAction("action<string, sequence<any>> returns any")
     def doBPMethod(self, methodname, args):
@@ -63,3 +65,7 @@ class BrickPiPlugin(EPLPluginBase):
             raise Exception("Method name not permitted: " + methodname)
         else:
             raise Exception("Unknown method name: " + methodname)
+
+    @EPLAction("action<> returns dictionary<string, any>")
+    def getConfig(self):
+        return self.config

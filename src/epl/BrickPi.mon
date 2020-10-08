@@ -7,21 +7,33 @@
  * 
  * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
  */
+package com.softwareag.apama.eplclub;
+
+//using com.apama.util.AnyExtractor; May need this later!
 
 monitor BrickPiInterface {
-	import "brickpiPlugin" as brickpiPlugin;
+    import "brickpiPlugin" as brickpiPlugin;
+	dictionary<string, any> config;
+    sequence<string> colorLookup;
 
-	action onload() {
-		brickpiPlugin.testAction();
+    action onload() {
+        colorLookup := ["?", "Black", "Blue", "Green", "Yellow", "Red", "White", "Brown"];
+		config := brickpiPlugin.getConfig();
 
-		any result := brickpiPlugin.doBPMethod("get_voltage_9v", new sequence<any>);
-		log "get_voltage_9v: " + result.toString() at INFO;
+        log "Config: " + config.toString();
+		integer colourSensorPort := <integer> config["COLOUR_SENSOR_PORT"];
 
-		result := brickpiPlugin.doBPMethod("get_version_hardware", new sequence<any>);
-		log "get_version_hardware: " + result.toString() at INFO;
+        any result := brickpiPlugin.doBPMethod("get_voltage_9v", new sequence<any>);
+        log "get_voltage_9v: " + result.toString() at INFO;
 
-		sequence<any> params := new sequence<any>;
-		params.append(10);
-		result := brickpiPlugin.doBPMethod("set_led", params);
-	}
+        result := brickpiPlugin.doBPMethod("get_version_hardware", new sequence<any>);
+        log "get_version_hardware: " + result.toString() at INFO;
+
+        on all wait(1.0) {
+            sequence<any> params := new sequence<any>;
+            params.append(colourSensorPort);
+            result := brickpiPlugin.doBPMethod("get_sensor", params);
+            log "get_sensor: " + colorLookup[<integer> result] at INFO;
+        }
+    }
 }
