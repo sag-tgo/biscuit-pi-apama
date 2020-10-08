@@ -47,3 +47,19 @@ class BrickPiPlugin(EPLPluginBase):
     @EPLAction("action<>")
     def testAction(self):
         self.getLogger().info("Hello from BrickPiPlugin!")
+
+    @EPLAction("action<string, sequence<any>> returns any")
+    def doBPMethod(self, methodname, args):
+        return self.doBPMethodArgs(methodname, *args)
+
+    def doBPMethodArgs(self, methodname, *args):
+        self.getLogger().info(f"doBPMethod( {methodname}, {str(*args)} )")
+        isMethodNameSafe = not methodname.endswith('__')  # filter out 'magic' objects
+        method = getattr(self.bp, methodname, None)
+        isCallable = callable(method)
+        if isMethodNameSafe and isCallable:
+            return method(*args)
+        elif not isMethodNameSafe:
+            raise Exception("Method name not permitted: " + methodname)
+        else:
+            raise Exception("Unknown method name: " + methodname)

@@ -1,0 +1,1 @@
+correlator --config config.yaml

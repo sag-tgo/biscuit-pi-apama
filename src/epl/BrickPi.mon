@@ -14,6 +14,7 @@ monitor BrickPiInterface {
 	action onload() {
 		brickpiPlugin.testAction();
 
-		//any result := brickpiPlugin.doBPMethod("name", ["param"]);
+		any result := brickpiPlugin.doBPMethod("get_voltage_9v", new sequence<any>);
+		log "get_voltage_9v: " + result.toString() at INFO;
 	}
 }
