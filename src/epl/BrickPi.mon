@@ -16,5 +16,12 @@ monitor BrickPiInterface {
 
 		any result := brickpiPlugin.doBPMethod("get_voltage_9v", new sequence<any>);
 		log "get_voltage_9v: " + result.toString() at INFO;
+
+		result := brickpiPlugin.doBPMethod("get_version_hardware", new sequence<any>);
+		log "get_version_hardware: " + result.toString() at INFO;
+
+		sequence<any> params := new sequence<any>;
+		params.append(10);
+		result := brickpiPlugin.doBPMethod("set_led", params);
 	}
 }
