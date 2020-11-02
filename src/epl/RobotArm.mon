@@ -17,7 +17,8 @@ monitor RobotArm {
         string myChannel := "ROBOT_ARM";
         send StartPollingLimitSensor(0.2, myChannel) to "SENSORS";
         log "sent StartPollingLimitSensor" at INFO;
-        on all BrickPiActionResult() as e {
+        
+        on all LimitSensorReading() as e {
             log e.toString() at INFO;
         }
 

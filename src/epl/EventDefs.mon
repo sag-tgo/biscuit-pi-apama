@@ -29,6 +29,10 @@ event StartPollingLimitSensor {
     string destChannel;
 }
 
+event LimitSensorReading {
+    boolean value;
+}
+
 event StartPollingGyroSensor {
     float intervalSecs;
     string destChannel;

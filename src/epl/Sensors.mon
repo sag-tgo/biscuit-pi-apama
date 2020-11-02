@@ -48,16 +48,25 @@ monitor Sensors {
     }
 
     action listenForLimitSensorRequests() {
-        on all StartPollingLimitSensor() as e {
+        on all StartPollingLimitSensor() as startEvent {
             log "Got start polling limit sensor request" at INFO;
+            string limitSensorChannel := "Sensors_Limit";
             sequence<any> params := new sequence<any>;
             params.append(config.LIMIT_SENSOR_PORT);
-                
-            on all wait(e.intervalSecs) and not StopPollingLimitSensor() {
-                // TODO: Listen for responses and send LimitSensorReading events?
-                log "Sending BP action request" at INFO;
-                send InvokeBrickPiAction("get_sensor", params, e.destChannel) to InvokeBrickPiAction.CHANNEL;
+
+            // Listen for BP action responses...
+            on all BrickPiActionResult() as reading and not StopPollingLimitSensor() {
+                // Send LimitSensorReading event
+                log "Got BPActionResult " + reading.toString() at INFO;
+                send LimitSensorReading(<integer>reading.value != 0) to startEvent.destChannel;
             }
+            
+            on all wait(startEvent.intervalSecs) and not StopPollingLimitSensor() {
+                log "Sending BP action request" at INFO;
+                send InvokeBrickPiAction("get_sensor", params, limitSensorChannel) to InvokeBrickPiAction.CHANNEL;
+            }
+
+            monitor.subscribe(limitSensorChannel);
         }
     }
 
