@@ -10,6 +10,7 @@
 package com.softwareag.apama.eplclub;
 
 event InvokeBrickPiAction {
+    constant string CHANNEL := "Invoke_BP_Action";
     string methodName;
     sequence<any> params;
     string responseChannel;
@@ -17,4 +18,44 @@ event InvokeBrickPiAction {
 
 event BrickPiActionResult {
     any value;
+}
+
+event ReadColorSensor {
+    constant string CHANNEL := "ColorSensor";
+}
+
+event StartPollingLimitSensor {
+    float intervalSecs;
+    string destChannel;
+}
+
+event StartPollingGyroSensor {
+    float intervalSecs;
+    string destChannel;
+}
+
+event StartPollingColorSensor {
+    float intervalSecs;
+    string destChannel;
+}
+
+event StopPollingLimitSensor {
+}
+
+event StopPollingGyroSensor {
+}
+
+event StopPollingColorSensor {
+}
+
+event Config {
+    constant string SUBSCRIBE_CHANNEL := "CONFIG";
+
+    integer COLOR_SENSOR_PORT; // For sensing colour of biscuits.
+    integer GYRO_SENSOR_PORT; // Gyro sensor on robot arm - could use to control height.
+    integer LIMIT_SENSOR_PORT; // Arm rotation limit touch sensor.
+
+    integer VERTICAL_MOTOR_PORT; // Port for the motor controlling veritcal movement of the arm.
+    integer ROTATE_MOTOR_PORT; // Port for the motor controlling rotation of the arm.
+    integer GRABBER_MOTOR_PORT; // Port for the motor controlling the grabber.
 }

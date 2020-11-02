@@ -38,14 +38,27 @@ class BrickPiPlugin(EPLPluginBase):
         self.bp.set_sensor_type(TOUCH_SENSOR1_PORT, self.bp.SENSOR_TYPE.EV3_TOUCH)
         self.bp.set_sensor_type(GYRO_SENSOR_PORT, self.bp.SENSOR_TYPE.EV3_GYRO_ABS_DPS)
         self.bp.set_sensor_type(COLOUR_SENSOR_PORT, self.bp.SENSOR_TYPE.EV3_COLOR_COLOR)
-        config["COLOUR_SENSOR_PORT"] = COLOUR_SENSOR_PORT
+        config["COLOR_SENSOR_PORT"] = COLOUR_SENSOR_PORT
         config["LIMIT_SENSOR_PORT"] = TOUCH_SENSOR1_PORT
         # Unused at the moment - future enhancement.
         # config["ESTOP_SENSOR_PORT"] = TOUCH_SENSOR2_PORT
         config["GYRO_SENSOR_PORT"] = GYRO_SENSOR_PORT
 
         # Configure BrickPi motors
-        # TODO!
+        # Grabber
+        self.bp.offset_motor_encoder(MOTOR_ARM_GRABBER, self.bp.get_motor_encoder(MOTOR_ARM_GRABBER))
+        self.bp.set_motor_limits(MOTOR_ARM_GRABBER, 20, 45)   
+        config["GRABBER_MOTOR_PORT"] = MOTOR_ARM_GRABBER
+
+        # Vertical
+        self.bp.offset_motor_encoder(MOTOR_ARM_VERTICAL, self.bp.get_motor_encoder(MOTOR_ARM_VERTICAL))
+        self.bp.set_motor_limits(MOTOR_ARM_VERTICAL, 20, 45)  
+        config["VERTICAL_MOTOR_PORT"] = MOTOR_ARM_VERTICAL
+
+        # Rotation
+        self.bp.offset_motor_encoder(MOTOR_ARM_ROTATE, self.bp.get_motor_encoder(MOTOR_ARM_ROTATE))
+        self.bp.set_motor_limits(MOTOR_ARM_ROTATE, 20, 45)  
+        config["ROTATE_MOTOR_PORT"] = MOTOR_ARM_ROTATE
 
         self.config = config
 
@@ -55,7 +68,7 @@ class BrickPiPlugin(EPLPluginBase):
         return self.doBPMethodArgs(methodname, *args)
 
     def doBPMethodArgs(self, methodname, *args):
-        self.getLogger().info(f"doBPMethod( {methodname}, {str(*args)} )")
+        self.getLogger().info(f"doBPMethod( {methodname}, {str(args)} )")
         isMethodNameSafe = not methodname.endswith('__')  # filter out 'magic' objects
         method = getattr(self.bp, methodname, None)
         isCallable = callable(method)

@@ -14,10 +14,8 @@ package com.softwareag.apama.eplclub;
 monitor BrickPiInterface {
     import "brickpiPlugin" as brickpiPlugin;
 	dictionary<string, any> config;
-    sequence<string> colorLookup;
 
     action onload() {
-        colorLookup := ["?", "Black", "Blue", "Green", "Yellow", "Red", "White", "Brown"];
 		config := brickpiPlugin.getConfig();
 
         log "Config: " + config.toString();
@@ -29,11 +27,11 @@ monitor BrickPiInterface {
         result := brickpiPlugin.doBPMethod("get_version_hardware", new sequence<any>);
         log "get_version_hardware: " + result.toString() at INFO;
 
-        on all wait(1.0) {
-            sequence<any> params := new sequence<any>;
-            params.append(colourSensorPort);
-            result := brickpiPlugin.doBPMethod("get_sensor", params);
-            log "get_sensor: " + colorLookup[<integer> result] at INFO;
+        on all InvokeBrickPiAction() as request {
+            log request.toString() at INFO;
+            any result := brickpiPlugin.doBPMethod(request.methodName, request.params);
+            send BrickPiActionResult(result) to request.responseChannel;
         }
+        monitor.subscribe(InvokeBrickPiAction.CHANNEL);
     }
 }

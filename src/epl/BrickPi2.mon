@@ -1,0 +1,214 @@
+/*
+ * Copyright (c) 2020 Software AG, Darmstadt, Germany and/or its licensors
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at
+ * 
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
+ */
+package com.softwareag.apama.eplclub;
+
+event InStartPosition{}
+
+event ColorReading{
+    string color;
+}
+
+event ColorReadingRequest{}
+
+event ItemPickedUp {
+    string color;
+}
+event GrabberPosition{
+    integer position;
+}
+
+event InPosition{}
+event ItemDropped{}
+
+event requestVPosition{}
+event requestHPosition{}
+
+event VPositionReading{
+    integer position;
+}
+
+event HPositionReading{
+    integer position;    
+}
+
+event InPosition{}
+
+event Stop {}
+
+
+monitor BrickPiMonitor {
+	integer itemCount := 0; 
+	//We might want to track the number of each item sorted? 
+	boolean isFree := true;
+
+    import "brickpiPlugin" as brickpiPlugin;
+	
+    sequence<string> colorLookup := ["?", "Black", "Blue", "Green", "Yellow", "Red", "White", "Brown"];
+    dictionary<string, integer> sortPositions := {"Black":0, "Blue":20, "Green":40 /*etc*/ }; //Change these 
+    
+    integer COLOR_SENSOR_PORT; // For sensing colour of biscuits
+    integer GYRO_SENSOR_PORT; // Gyro sensor on robot arm - could use to control height
+    integer LIMIT_SENSOR_PORT; // Arm rotation limit touch sensor
+
+    integer verticalArmPort;
+    integer rotateArmPort;
+    integer grabberPort;
+
+    Config config;
+
+	action onload() {
+        setup();
+		on all InvokeBrickPiAction() as request {
+            log request.toString() at INFO;
+            any result := brickpiPlugin.doBPMethod(request.methodName, request.params);
+            send BrickPiActionResult(result) to request.responseChannel;
+        }
+        monitor.subscribe(InvokeBrickPiAction.CHANNEL);
+		
+        //pickUpItem("Black");
+        //dropItem();
+        //on wait(5.0) {
+        //    dropItem();
+        //}
+
+        /*
+        returnToStartPosition();
+		
+		on all InStartPosition() and not Stop() {
+			
+			on all wait(0.5) and not ColourReading() { // Poll until we get a color reading
+				send ColorReadingRequest() to "CHANNEL";
+			}
+
+			on all ColorReadingRequest() as r {
+                readColorSensor();
+			}
+
+			on ColorReading() as resp {
+					itemCount := itemCount + 1; // Maybe we could use this variable somehow?
+					pickUpItem(resp.color);
+				}
+			}
+		}
+
+		on all ItemPickedUp() as item {
+			moveArm(item.colour);
+		}
+
+		on all InPosition(){
+			dropItem();
+		}
+
+		on all ItemDropped(){		
+			returnToStartPosition();
+		}*/	
+    }
+
+    action setup(){
+		dictionary<string, any> configDict := brickpiPlugin.getConfig();
+        config := new Config;
+        config.COLOR_SENSOR_PORT := <integer> configDict["COLOR_SENSOR_PORT"];
+        config.GYRO_SENSOR_PORT := <integer> configDict["GYRO_SENSOR_PORT"];
+        config.LIMIT_SENSOR_PORT := <integer> configDict["LIMIT_SENSOR_PORT"];
+
+        config.VERTICAL_MOTOR_PORT := <integer> configDict["VERTICAL_MOTOR_PORT"];
+        config.ROTATE_MOTOR_PORT := <integer> configDict["ROTATE_MOTOR_PORT"];
+        config.GRABBER_MOTOR_PORT := <integer> configDict["GRABBER_MOTOR_PORT"];
+
+        log "Config: " + config.toString();
+
+        send config to Config.SUBSCRIBE_CHANNEL;
+    }
+
+    action readColorSensor(){
+        sequence<any> params := new sequence<any>;
+        params.append(COLOR_SENSOR_PORT);
+        any result := brickpiPlugin.doBPMethod("get_sensor", params);
+        log "Read color sensor: " + result.toString() at INFO;
+        //if (result != "?"){
+		//	send ColourReading(result) to "CHANNEL";
+		//}
+    }
+/*
+	action pickUpItem(string color){
+        log "Closing grabber..." at INFO;
+		// DO bp Method to close grabber
+        sequence<any> params := new sequence<any>;
+        params.append(grabberPort);
+        integer target := 80;
+        params.append(target);
+        any result := brickpiPlugin.doBPMethod("set_motor_position_relative", params);
+        // Maybe need to add another event here to replace wait?
+        params.remove(1);
+        integer lastPosition := 0;
+        listener positionListener;
+        listener grabberClosedListener;
+
+        //on GrabberPosition(position>=target) or GrabberPosition(position=lastPosition) -> GrabberPosition(position=lastPosition){
+        grabberClosedListener := on GrabberPosition(position>=target) {
+            positionListener.quit();
+            send ItemPickedUp(color) to "CHANNEL";
+            log "Grabber closed at position " + lastPosition.toString() at INFO;
+        }
+        
+        positionListener := on all wait(0.1) and not GrabberPosition(position>=target) {
+            integer result := <integer> brickpiPlugin.doBPMethod("get_motor_encoder", params);
+            if result = lastPosition {
+                send ItemPickedUp(color) to "CHANNEL";
+                log "Grabber closed at position " + lastPosition.toString() at INFO;
+                grabberClosedListener.quit();
+                positionListener.quit();
+            } else {
+                lastPosition := result;
+                log "motor position " + result.toString() at INFO;
+                send GrabberPosition(result) to "CHANNEL";
+            }
+        }
+
+        
+	}
+    
+
+	action dropItem(){
+        log "Opening grabber..." at INFO;
+		// DO bp Method to close grabber
+        sequence<any> params := new sequence<any>;
+        params.append(grabberPort);
+        params.append(-80);
+        any result := brickpiPlugin.doBPMethod("set_motor_position_relative", params);
+        // Maybe need to add another event here to replace wait?
+        //on wait(5.0){
+        //    send ItemDropped() to "CHANNEL";
+        //}
+	}
+			
+	action returnToStartPosition(){
+		//Do BPMETHOD to move motor
+		send InStartPosition() to "CHANNEL";
+	}
+
+	action moveArm(string color){
+		//do BP method to set motor speed 
+		// poll arm positions 
+		on wait(0.01){
+			send requestVPosition() to "CHANNEL";
+			// We will probably only want to move 1 direction at a time instead i.e. move arm vertically, then move arm horizontally
+			send requestHPosition() to "CHANNEL";
+		}
+		
+		// When arm is in position
+		//on all HPositionReading(position in [sortPositions[color]-5, sortPositions[color]+5]){
+			
+		//	send InPosition()
+		//}
+	}
+	//TODO listener for Stop button pressed. 
+*/
+}
