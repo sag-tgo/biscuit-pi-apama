@@ -53,6 +53,27 @@ event StartPollingColorSensor {
     string destChannel;
 }
 
+event ColorSensorReading {
+    /**
+     * The color read by the sensor.
+     */
+    string color;
+    
+    constant string UNKNOWN_COLOR := "?";
+    
+    /**
+     * Get a color from an integer value.
+     */
+    static action fromInteger(integer value) returns string {
+        sequence<string> colorLookup := [UNKNOWN_COLOR, "black", "blue", "green", "yellow", "red", "white", "brown"];
+
+        if value >= 0 and value < colorLookup.size() {
+            return colorLookup[value];
+        }
+        return "ERROR"; // Or throw out of range exception?
+    }
+}
+
 event StopPollingColorSensor {
 }
 

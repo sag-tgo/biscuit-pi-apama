@@ -15,19 +15,14 @@ monitor RobotArm {
     action onload() {
         log "" at INFO;
         string myChannel := "ROBOT_ARM";
-        send StartPollingGyroSensor(0.2, myChannel) to "SENSORS";
-        log "sent StartPollingGyroSensor" at INFO;
+        send StartPollingColorSensor(0.5, myChannel) to "SENSORS";
+        log "sent StartPollingColorSensor" at INFO;
 
         // TODO: Poll another sensor at the same time.
         
-        on all GyroSensorReading() as e {
+        on all ColorSensorReading() as e {
             log e.toString() at INFO;
         }
-
-        //on wait (10.0) {
-        //    send StopPollingGyroSensor() to "SENSORS";
-        //    log "sent StopPollingGyroSensor" at INFO;
-        //}
 
         monitor.subscribe(myChannel);
         log "monitor.subscribe(ROBOT_ARM);" at INFO;

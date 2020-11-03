@@ -14,7 +14,7 @@ package com.softwareag.apama.eplclub;
  */
 monitor Sensors {
 
-    sequence<string> colorLookup := ["?", "Black", "Blue", "Green", "Yellow", "Red", "White", "Brown"];
+    
 
     Config config;
 
@@ -25,6 +25,8 @@ monitor Sensors {
             // TODO: Spawn?
             listenForLimitSensorRequests();
             listenForGyroSensorRequests();
+            listenForColorSensorRequests();
+
             monitor.subscribe("SENSORS");
             log "monitor.subscribe(SENSORS);" at DEBUG;
         }
@@ -78,6 +80,29 @@ monitor Sensors {
             }
 
             monitor.subscribe(gyroSensorChannel);
+        }
+    }
+
+    action listenForColorSensorRequests() {
+        on all StartPollingColorSensor() as startEvent {
+            log "Got start polling color sensor request" at DEBUG;
+            string colorSensorChannel := "Sensors_Color";
+            sequence<any> params := new sequence<any>;
+            params.append(config.COLOR_SENSOR_PORT);
+
+            // Listen for BP action responses...
+            on all BrickPiActionResult() as reading and not StopPollingColorSensor() {
+                log "Got ColorSensorReading " + reading.toString() at DEBUG;
+                string color := ColorSensorReading.fromInteger(<integer>reading.value);
+                send ColorSensorReading(color) to startEvent.destChannel;
+            }
+            
+            on all wait(startEvent.intervalSecs) and not StopPollingColorSensor() {
+                log "Requesting limit sensor reading" at DEBUG;
+                send InvokeBrickPiAction("get_sensor", params, colorSensorChannel) to InvokeBrickPiAction.CHANNEL;
+            }
+
+            monitor.subscribe(colorSensorChannel);
         }
     }
 
