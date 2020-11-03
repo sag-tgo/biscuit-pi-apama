@@ -21,48 +21,32 @@ monitor Sensors {
     action onload() {
         on Config() as cfg {
             config := cfg;
-            log "got config" at INFO;
+            log "got config" at DEBUG;
+            // TODO: Spawn?
             listenForLimitSensorRequests();
+            listenForGyroSensorRequests();
             monitor.subscribe("SENSORS");
-            log "monitor.subscribe(SENSORS);" at INFO;
+            log "monitor.subscribe(SENSORS);" at DEBUG;
         }
         monitor.subscribe(Config.SUBSCRIBE_CHANNEL);
-        log "monitor.subscribe(Config.SUBSCRIBE_CHANNEL);" at INFO;
-
-        /*on all ReadColorSensor() as evt {
-            sequence<any> params := new sequence<any>;
-            params.append(1);
-            send InvokeBrickPiAction("get_sensor", params, ReadColorSensor.CHANNEL) to InvokeBrickPiAction.CHANNEL;
-        }
-        //monitor.subscribe("TEST");
-
-        on all wait (1.0) {
-            sequence<any> params := new sequence<any>;
-            params.append(1);
-            send InvokeBrickPiAction("get_sensor", params, ReadColorSensor.CHANNEL) to InvokeBrickPiAction.CHANNEL;
-        }*/
-
-        //spawn listenForColorSensorEvents();
-        //spawn listenForLimitSensorEvents();
-        //spawn listenForGyroSensorEvents();
+        log "monitor.subscribe(Config.SUBSCRIBE_CHANNEL);" at DEBUG;
     }
 
     action listenForLimitSensorRequests() {
         on all StartPollingLimitSensor() as startEvent {
-            log "Got start polling limit sensor request" at INFO;
+            log "Got start polling limit sensor request" at DEBUG;
             string limitSensorChannel := "Sensors_Limit";
             sequence<any> params := new sequence<any>;
             params.append(config.LIMIT_SENSOR_PORT);
 
             // Listen for BP action responses...
             on all BrickPiActionResult() as reading and not StopPollingLimitSensor() {
-                // Send LimitSensorReading event
-                log "Got BPActionResult " + reading.toString() at INFO;
+                log "Got LimitSensorReading " + reading.toString() at DEBUG;
                 send LimitSensorReading(<integer>reading.value != 0) to startEvent.destChannel;
             }
             
             on all wait(startEvent.intervalSecs) and not StopPollingLimitSensor() {
-                log "Sending BP action request" at INFO;
+                log "Requesting limit sensor reading" at DEBUG;
                 send InvokeBrickPiAction("get_sensor", params, limitSensorChannel) to InvokeBrickPiAction.CHANNEL;
             }
 
@@ -70,26 +54,31 @@ monitor Sensors {
         }
     }
 
-/*
-    action listenForColorSensorEvents() {
-        on all BrickPiActionResult() as res {
-            log "Color sensor response? " + res.toString() at INFO;
+    action listenForGyroSensorRequests() {
+        on all StartPollingGyroSensor() as startEvent {
+            log "Got start polling gyro sensor request" at DEBUG;
+            string gyroSensorChannel := "Sensors_Gyro";
+            sequence<any> params := new sequence<any>;
+            params.append(config.GYRO_SENSOR_PORT);
+
+            // Listen for BP action responses...
+            on all BrickPiActionResult() as reading and not StopPollingGyroSensor() {
+                log "Got GyroSensorReading " + reading.toString() at DEBUG;
+                sequence<any> mySeq := <sequence<any>>reading.value;
+                GyroSensorReading gyroReading := new GyroSensorReading;
+                gyroReading.angle := <integer> mySeq[0];
+                gyroReading.acceleration := <integer> mySeq[1];
+                
+                send gyroReading to startEvent.destChannel;
+            }
+            
+            on all wait(startEvent.intervalSecs) and not StopPollingGyroSensor() {
+                log "Requesting gyro sensor reading" at DEBUG;
+                send InvokeBrickPiAction("get_sensor", params, gyroSensorChannel) to InvokeBrickPiAction.CHANNEL;
+            }
+
+            monitor.subscribe(gyroSensorChannel);
         }
-        monitor.subscribe(ReadColorSensor.CHANNEL);
     }
 
-    action listenForLimitSensorEvents() {
-        on all BrickPiActionResult() as res {
-            log "Limit sensor response? " + res.toString() at INFO;
-        }
-        monitor.subscribe("limitsensor");
-    }
-
-    action listenForGyroSensorEvents() {
-        on all BrickPiActionResult() as res {
-            log "Gyro sensor response? " + res.toString() at INFO;
-        }
-        monitor.subscribe("gyrosensor");
-    }
-    */
 }

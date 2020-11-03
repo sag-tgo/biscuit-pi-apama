@@ -68,7 +68,7 @@ class BrickPiPlugin(EPLPluginBase):
         return self.doBPMethodArgs(methodname, *args)
 
     def doBPMethodArgs(self, methodname, *args):
-        self.getLogger().info(f"doBPMethod( {methodname}, {str(args)} )")
+        self.getLogger().debug(f"doBPMethod( {methodname}, {str(args)} )")
         isMethodNameSafe = not methodname.endswith('__')  # filter out 'magic' objects
         method = getattr(self.bp, methodname, None)
         isCallable = callable(method)

@@ -15,17 +15,19 @@ monitor RobotArm {
     action onload() {
         log "" at INFO;
         string myChannel := "ROBOT_ARM";
-        send StartPollingLimitSensor(0.2, myChannel) to "SENSORS";
-        log "sent StartPollingLimitSensor" at INFO;
+        send StartPollingGyroSensor(0.2, myChannel) to "SENSORS";
+        log "sent StartPollingGyroSensor" at INFO;
+
+        // TODO: Poll another sensor at the same time.
         
-        on all LimitSensorReading() as e {
+        on all GyroSensorReading() as e {
             log e.toString() at INFO;
         }
 
-        on wait (10.0) {
-            send StopPollingLimitSensor() to "SENSORS";
-            log "sent StopPollingLimitSensor" at INFO;
-        }
+        //on wait (10.0) {
+        //    send StopPollingGyroSensor() to "SENSORS";
+        //    log "sent StopPollingGyroSensor" at INFO;
+        //}
 
         monitor.subscribe(myChannel);
         log "monitor.subscribe(ROBOT_ARM);" at INFO;

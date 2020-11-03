@@ -20,10 +20,7 @@ event BrickPiActionResult {
     any value;
 }
 
-event ReadColorSensor {
-    constant string CHANNEL := "ColorSensor";
-}
-
+// Limit sensor events
 event StartPollingLimitSensor {
     float intervalSecs;
     string destChannel;
@@ -33,20 +30,27 @@ event LimitSensorReading {
     boolean value;
 }
 
+event StopPollingLimitSensor {
+}
+
+// Gyro sensor events
 event StartPollingGyroSensor {
     float intervalSecs;
     string destChannel;
 }
 
-event StartPollingColorSensor {
-    float intervalSecs;
-    string destChannel;
-}
-
-event StopPollingLimitSensor {
+event GyroSensorReading {
+    integer angle;
+    integer acceleration; // ?
 }
 
 event StopPollingGyroSensor {
+}
+
+// Color sensor events
+event StartPollingColorSensor {
+    float intervalSecs;
+    string destChannel;
 }
 
 event StopPollingColorSensor {
