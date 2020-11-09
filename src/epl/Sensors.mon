@@ -14,18 +14,22 @@ package com.softwareag.apama.eplclub;
  */
 monitor Sensors {
 
-    
-
     Config config;
 
     action onload() {
         on Config() as cfg {
             config := cfg;
             log "got config" at DEBUG;
-            // TODO: Spawn?
-            listenForLimitSensorRequests();
-            listenForGyroSensorRequests();
-            listenForColorSensorRequests();
+            
+            on all StartPollingLimitSensor() as startEvent {
+                spawn onStartPollingLimitSensor(startEvent);
+            }
+
+            on all StartPollingColorSensor() as startEvent {
+                spawn onStartPollingColorSensor(startEvent);
+            }
+
+            //spawn listenForGyroSensorRequests();
 
             monitor.subscribe("SENSORS");
             log "monitor.subscribe(SENSORS);" at DEBUG;
@@ -34,26 +38,28 @@ monitor Sensors {
         log "monitor.subscribe(Config.SUBSCRIBE_CHANNEL);" at DEBUG;
     }
 
-    action listenForLimitSensorRequests() {
-        on all StartPollingLimitSensor() as startEvent {
-            log "Got start polling limit sensor request" at DEBUG;
-            string limitSensorChannel := "Sensors_Limit";
-            sequence<any> params := new sequence<any>;
-            params.append(config.LIMIT_SENSOR_PORT);
+    action onStartPollingLimitSensor(StartPollingLimitSensor startEvent) {
+        log "Got start polling limit sensor request" at DEBUG;
+        string limitSensorChannel := "Sensors_Limit";
+        sequence<any> params := new sequence<any>;
+        params.append(config.LIMIT_SENSOR_PORT);
 
-            // Listen for BP action responses...
-            on all BrickPiActionResult() as reading and not StopPollingLimitSensor() {
-                log "Got LimitSensorReading " + reading.toString() at DEBUG;
-                send LimitSensorReading(<integer>reading.value != 0) to startEvent.destChannel;
-            }
-            
-            on all wait(startEvent.intervalSecs) and not StopPollingLimitSensor() {
-                log "Requesting limit sensor reading" at DEBUG;
-                send InvokeBrickPiAction("get_sensor", params, limitSensorChannel) to InvokeBrickPiAction.CHANNEL;
-            }
-
-            monitor.subscribe(limitSensorChannel);
+        // Listen for BP action responses...
+        on all BrickPiActionResult() as reading and not StopPollingLimitSensor() {
+            log "Got LimitSensorReading " + reading.toString() at DEBUG;
+            send LimitSensorReading(<integer>reading.value != 0) to startEvent.destChannel;
         }
+        
+        on all wait(startEvent.intervalSecs) and not StopPollingLimitSensor() {
+            log "Requesting limit sensor reading" at DEBUG;
+            send InvokeBrickPiAction("get_sensor", params, limitSensorChannel) to InvokeBrickPiAction.CHANNEL;
+        }
+
+        on StopPollingLimitSensor() {
+            die;
+        }
+
+        monitor.subscribe(limitSensorChannel);
     }
 
     action listenForGyroSensorRequests() {
@@ -83,27 +89,29 @@ monitor Sensors {
         }
     }
 
-    action listenForColorSensorRequests() {
-        on all StartPollingColorSensor() as startEvent {
-            log "Got start polling color sensor request" at DEBUG;
-            string colorSensorChannel := "Sensors_Color";
-            sequence<any> params := new sequence<any>;
-            params.append(config.COLOR_SENSOR_PORT);
+    action onStartPollingColorSensor(StartPollingColorSensor startEvent) {
+        log "Got start polling color sensor request" at DEBUG;
+        string colorSensorChannel := "Sensors_Color";
+        sequence<any> params := new sequence<any>;
+        params.append(config.COLOR_SENSOR_PORT);
 
-            // Listen for BP action responses...
-            on all BrickPiActionResult() as reading and not StopPollingColorSensor() {
-                log "Got ColorSensorReading " + reading.toString() at DEBUG;
-                string color := ColorSensorReading.fromInteger(<integer>reading.value);
-                send ColorSensorReading(color) to startEvent.destChannel;
-            }
-            
-            on all wait(startEvent.intervalSecs) and not StopPollingColorSensor() {
-                log "Requesting limit sensor reading" at DEBUG;
-                send InvokeBrickPiAction("get_sensor", params, colorSensorChannel) to InvokeBrickPiAction.CHANNEL;
-            }
-
-            monitor.subscribe(colorSensorChannel);
+        // Listen for BP action responses...
+        on all BrickPiActionResult() as reading and not StopPollingColorSensor() {
+            log "Got ColorSensorReading " + reading.toString() at DEBUG;
+            string color := ColorSensorReading.fromInteger(<integer>reading.value);
+            send ColorSensorReading(color) to startEvent.destChannel;
         }
+        
+        on all wait(startEvent.intervalSecs) and not StopPollingColorSensor() {
+            log "Requesting limit sensor reading" at DEBUG;
+            send InvokeBrickPiAction("get_sensor", params, colorSensorChannel) to InvokeBrickPiAction.CHANNEL;
+        }
+
+        on StopPollingColorSensor() {
+            die;
+        }
+
+        monitor.subscribe(colorSensorChannel);
     }
 
 }
