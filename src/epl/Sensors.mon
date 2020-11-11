@@ -33,10 +33,10 @@ monitor Sensors {
                 spawn onStartPollingColorSensor(startEvent) to colorSensorContext;
             }
 
-            //context gyroSensorContext := context("gyro");
-            //on all StartPollingColorSensor() as startEvent {
-            //    spawn onStartPollingColorSensor(startEvent) to colorSensorContext;
-            //}
+            context gyroSensorContext := context("gyro");
+            on all StartPollingGyroSensor() as startEvent {
+                spawn onStartPollingGyroSensor(startEvent) to gyroSensorContext;
+            }
             
             monitor.subscribe(SENSORS_CHANNEL);
             log "monitor.subscribe(SENSORS_CHANNEL);" at DEBUG;
@@ -71,31 +71,35 @@ monitor Sensors {
         monitor.subscribe(limitSensorChannel);
     }
 
-    action listenForGyroSensorRequests() {
-        on all StartPollingGyroSensor() as startEvent {
-            log "Got start polling gyro sensor request" at DEBUG;
-            string gyroSensorChannel := "Sensors_Gyro";
-            sequence<any> params := new sequence<any>;
-            params.append(config.GYRO_SENSOR_PORT);
+    action onStartPollingGyroSensor(StartPollingGyroSensor startEvent) {
+        log "Got start polling gyro sensor request" at DEBUG;
+        string gyroSensorChannel := "Sensors_Gyro";
+        sequence<any> params := new sequence<any>;
+        params.append(config.GYRO_SENSOR_PORT);
 
-            // Listen for BP action responses...
-            on all BrickPiActionResult() as reading and not StopPollingGyroSensor() {
-                log "Got GyroSensorReading " + reading.toString() at DEBUG;
-                sequence<any> mySeq := <sequence<any>>reading.value;
-                GyroSensorReading gyroReading := new GyroSensorReading;
-                gyroReading.angle := <integer> mySeq[0];
-                gyroReading.acceleration := <integer> mySeq[1];
-                
-                send gyroReading to startEvent.destChannel;
-            }
+        // Listen for BP action responses...
+        on all BrickPiActionResult() as reading and not StopPollingGyroSensor() {
+            log "Got GyroSensorReading " + reading.toString() at DEBUG;
+            sequence<any> mySeq := <sequence<any>>reading.value;
+            GyroSensorReading gyroReading := new GyroSensorReading;
+            gyroReading.angle := <integer> mySeq[0];
+            gyroReading.acceleration := <integer> mySeq[1];
             
-            on all wait(startEvent.intervalSecs) and not StopPollingGyroSensor() {
-                log "Requesting gyro sensor reading" at DEBUG;
-                send InvokeBrickPiAction("get_sensor", params, gyroSensorChannel) to InvokeBrickPiAction.CHANNEL;
-            }
-
-            monitor.subscribe(gyroSensorChannel);
+            send gyroReading to startEvent.destChannel;
         }
+        
+        on all wait(startEvent.intervalSecs) and not StopPollingGyroSensor() {
+            log "Requesting gyro sensor reading" at DEBUG;
+            send InvokeBrickPiAction("get_sensor", params, gyroSensorChannel) to InvokeBrickPiAction.CHANNEL;
+        }
+
+        on StopPollingGyroSensor() {
+            log "got StopPollingGyroSensor" at DEBUG;
+            die;
+        }
+
+        monitor.subscribe(SENSORS_CHANNEL);
+        monitor.subscribe(gyroSensorChannel);
     }
 
     action onStartPollingColorSensor(StartPollingColorSensor startEvent) {
