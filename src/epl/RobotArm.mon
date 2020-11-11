@@ -33,5 +33,8 @@ monitor RobotArm {
             log e.toString() at INFO;
         }
         
+        on wait(10.0) {
+            send StopPollingLimitSensor() to "SENSORS";
+        }
     }
 }

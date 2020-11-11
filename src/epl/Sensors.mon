@@ -16,6 +16,8 @@ monitor Sensors {
 
     Config config;
 
+    constant string SENSORS_CHANNEL := "SENSORS";
+
     action onload() {
         on Config() as cfg {
             config := cfg;
@@ -31,10 +33,13 @@ monitor Sensors {
                 spawn onStartPollingColorSensor(startEvent) to colorSensorContext;
             }
 
-            //spawn listenForGyroSensorRequests();
-
-            monitor.subscribe("SENSORS");
-            log "monitor.subscribe(SENSORS);" at DEBUG;
+            //context gyroSensorContext := context("gyro");
+            //on all StartPollingColorSensor() as startEvent {
+            //    spawn onStartPollingColorSensor(startEvent) to colorSensorContext;
+            //}
+            
+            monitor.subscribe(SENSORS_CHANNEL);
+            log "monitor.subscribe(SENSORS_CHANNEL);" at DEBUG;
         }
         monitor.subscribe(Config.SUBSCRIBE_CHANNEL);
         log "monitor.subscribe(Config.SUBSCRIBE_CHANNEL);" at DEBUG;
@@ -58,9 +63,11 @@ monitor Sensors {
         }
 
         on StopPollingLimitSensor() {
+            log "got StopPollingLimitSensor" at DEBUG;
             die;
         }
 
+        monitor.subscribe(SENSORS_CHANNEL);
         monitor.subscribe(limitSensorChannel);
     }
 
@@ -110,9 +117,11 @@ monitor Sensors {
         }
 
         on StopPollingColorSensor() {
+            log "got StopPollingColorSensor" at DEBUG;
             die;
         }
 
+        monitor.subscribe(SENSORS_CHANNEL);
         monitor.subscribe(colorSensorChannel);
     }
 
