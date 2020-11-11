@@ -19,13 +19,13 @@ monitor RobotArm {
         monitor.subscribe(myChannel);
         log "monitor.subscribe(ROBOT_ARM);" at INFO;
 
-        send StartPollingLimitSensor(0.2, myChannel) to StartPollingLimitSensor.CHANNEL;
+        send StartPollingLimitSensor(0.2, myChannel) to Constants.SENSORS_CHANNEL;
         log "sent StartPollingLimitSensor" at INFO;
 
-        send StartPollingColorSensor(2.0, myChannel) to StartPollingColorSensor.CHANNEL;
+        send StartPollingColorSensor(2.0, myChannel) to Constants.SENSORS_CHANNEL;
         log "sent StartPollingColorSensor" at INFO;
 
-        send StartPollingGyroSensor(0.5, myChannel) to StartPollingColorSensor.CHANNEL;
+        send StartPollingGyroSensor(0.5, myChannel) to Constants.SENSORS_CHANNEL;
         log "sent StartPollingGyroSensor" at INFO;
 
         on all ColorSensorReading() as e {
@@ -41,8 +41,8 @@ monitor RobotArm {
         }
         
         on wait(5.0) {
-            send StopPollingLimitSensor() to StopPollingLimitSensor.CHANNEL;
-            send StopPollingGyroSensor() to StopPollingGyroSensor.CHANNEL;
+            send StopPollingLimitSensor() to Constants.SENSORS_CHANNEL;
+            send StopPollingGyroSensor() to Constants.SENSORS_CHANNEL;
         }
     }
 }

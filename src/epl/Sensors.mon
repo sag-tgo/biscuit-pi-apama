@@ -16,8 +16,6 @@ monitor Sensors {
 
     Config config;
 
-    constant string SENSORS_CHANNEL := "SENSORS";  // TODO: get from event constants
-
     action onload() {
         on Config() as cfg {
             config := cfg;
@@ -38,7 +36,7 @@ monitor Sensors {
                 spawn onStartPollingGyroSensor(startEvent) to gyroSensorContext;
             }
             
-            monitor.subscribe(SENSORS_CHANNEL);
+            monitor.subscribe(Constants.SENSORS_CHANNEL);
             log "monitor.subscribe(SENSORS_CHANNEL);" at DEBUG;
         }
         monitor.subscribe(Config.SUBSCRIBE_CHANNEL);
@@ -67,7 +65,7 @@ monitor Sensors {
             die;
         }
 
-        monitor.subscribe(SENSORS_CHANNEL);
+        monitor.subscribe(Constants.SENSORS_CHANNEL);
         monitor.subscribe(limitSensorChannel);
     }
 
@@ -98,7 +96,7 @@ monitor Sensors {
             die;
         }
 
-        monitor.subscribe(SENSORS_CHANNEL);
+        monitor.subscribe(Constants.SENSORS_CHANNEL);
         monitor.subscribe(gyroSensorChannel);
     }
 
@@ -125,7 +123,7 @@ monitor Sensors {
             die;
         }
 
-        monitor.subscribe(SENSORS_CHANNEL);
+        monitor.subscribe(Constants.SENSORS_CHANNEL);
         monitor.subscribe(colorSensorChannel);
     }
 

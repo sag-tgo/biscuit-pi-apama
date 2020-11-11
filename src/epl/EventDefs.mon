@@ -20,9 +20,12 @@ event BrickPiActionResult {
     any value;
 }
 
+event Constants {
+    constant string SENSORS_CHANNEL := "SENSORS";
+}
+
 // Limit sensor events
 event StartPollingLimitSensor {
-    constant string CHANNEL := "SENSORS";
     float intervalSecs;
     string destChannel;
 }
@@ -32,12 +35,10 @@ event LimitSensorReading {
 }
 
 event StopPollingLimitSensor {
-    constant string CHANNEL := "SENSORS";
 }
 
 // Gyro sensor events
 event StartPollingGyroSensor {
-    constant string CHANNEL := "SENSORS";
     float intervalSecs;
     string destChannel;
 }
@@ -48,12 +49,10 @@ event GyroSensorReading {
 }
 
 event StopPollingGyroSensor {
-    constant string CHANNEL := "SENSORS";
 }
 
 // Color sensor events
 event StartPollingColorSensor {
-    constant string CHANNEL := "SENSORS";
     float intervalSecs;
     string destChannel;
 }
@@ -80,7 +79,6 @@ event ColorSensorReading {
 }
 
 event StopPollingColorSensor {
-    constant string CHANNEL := "SENSORS";
 }
 
 event Config {
