@@ -21,12 +21,14 @@ monitor Sensors {
             config := cfg;
             log "got config" at DEBUG;
             
+            context limitSensorContext := context("limit");
             on all StartPollingLimitSensor() as startEvent {
-                spawn onStartPollingLimitSensor(startEvent);
+                spawn onStartPollingLimitSensor(startEvent) to limitSensorContext;
             }
 
+            context colorSensorContext := context("color");
             on all StartPollingColorSensor() as startEvent {
-                spawn onStartPollingColorSensor(startEvent);
+                spawn onStartPollingColorSensor(startEvent) to colorSensorContext;
             }
 
             //spawn listenForGyroSensorRequests();
