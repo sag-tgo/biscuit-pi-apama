@@ -47,17 +47,17 @@ class BrickPiPlugin(EPLPluginBase):
         # Configure BrickPi motors
         # Grabber
         self.bp.offset_motor_encoder(MOTOR_ARM_GRABBER, self.bp.get_motor_encoder(MOTOR_ARM_GRABBER))
-        self.bp.set_motor_limits(MOTOR_ARM_GRABBER, 20, 45)   
+        self.bp.set_motor_limits(MOTOR_ARM_GRABBER, 20, 45)
         config["GRABBER_MOTOR_PORT"] = MOTOR_ARM_GRABBER
 
         # Vertical
         self.bp.offset_motor_encoder(MOTOR_ARM_VERTICAL, self.bp.get_motor_encoder(MOTOR_ARM_VERTICAL))
-        self.bp.set_motor_limits(MOTOR_ARM_VERTICAL, 20, 45)  
+        self.bp.set_motor_limits(MOTOR_ARM_VERTICAL, 20, 45)
         config["VERTICAL_MOTOR_PORT"] = MOTOR_ARM_VERTICAL
 
         # Rotation
         self.bp.offset_motor_encoder(MOTOR_ARM_ROTATE, self.bp.get_motor_encoder(MOTOR_ARM_ROTATE))
-        self.bp.set_motor_limits(MOTOR_ARM_ROTATE, 20, 45)  
+        self.bp.set_motor_limits(MOTOR_ARM_ROTATE, 20, 45)
         config["ROTATE_MOTOR_PORT"] = MOTOR_ARM_ROTATE
 
         self.config = config
