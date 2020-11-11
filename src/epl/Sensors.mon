@@ -16,7 +16,7 @@ monitor Sensors {
 
     Config config;
 
-    constant string SENSORS_CHANNEL := "SENSORS";
+    constant string SENSORS_CHANNEL := "SENSORS";  // TODO: get from event constants
 
     action onload() {
         on Config() as cfg {
