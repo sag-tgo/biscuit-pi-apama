@@ -22,6 +22,7 @@ event BrickPiActionResult {
 
 event Constants {
     constant string SENSORS_CHANNEL := "SENSORS";
+    constant string MOTORS_CHANNEL := "MOTORS";
 }
 
 // Limit sensor events
@@ -79,6 +80,23 @@ event ColorSensorReading {
 }
 
 event StopPollingColorSensor {
+}
+
+event StartRotationMotor {
+    /**
+     * Relative target position.
+     */
+    integer targetPosRelative;
+
+    float intervalSecs; // Polling
+    string destChannel;
+}
+
+event RotationMotorReading {
+    integer position;
+}
+
+event StopRotationMotor {
 }
 
 event Config {
