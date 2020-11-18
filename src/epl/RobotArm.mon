@@ -28,6 +28,9 @@ monitor RobotArm {
         send StartPollingGyroSensor(0.5, myChannel) to Constants.SENSORS_CHANNEL;
         log "sent StartPollingGyroSensor" at INFO;
 
+        send StartRotationMotor(5, 0.1, myChannel) to Constants.MOTORS_CHANNEL;
+        log "sent StartRotationMotor" at INFO;
+
         on all ColorSensorReading() as e {
             log e.toString() at INFO;
         }
@@ -39,10 +42,15 @@ monitor RobotArm {
         on all GyroSensorReading() as e {
             log e.toString() at INFO;
         }
+
+        on all RotationMotorReading() as e {
+            log e.toString() at INFO;
+        }
         
         on wait(5.0) {
             send StopPollingLimitSensor() to Constants.SENSORS_CHANNEL;
             send StopPollingGyroSensor() to Constants.SENSORS_CHANNEL;
+            send StopRotationMotor() to Constants.MOTORS_CHANNEL;
         }
     }
 }

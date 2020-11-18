@@ -12,5 +12,6 @@ correlator:
       - ${APAMA_HOME}/monitors/AnyExtractor.mon
       - src/epl/EventDefs.mon
       - src/epl/Sensors.mon
+      - src/epl/Motors.mon
       - src/epl/BrickPi2.mon
       - src/epl/RobotArm.mon

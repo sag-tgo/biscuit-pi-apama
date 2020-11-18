@@ -19,18 +19,42 @@ monitor Motors {
     action onload() {
         on Config() as cfg {
             config := cfg;
-            log "got config" at DEBUG;
+            log "got config" at INFO;
 
             context rotationMotorContext := context("rotation");
             on all StartRotationMotor() as e {
                 spawn onStartRotationMotor(e) to rotationMotorContext;
             }
+
+            monitor.subscribe(Constants.MOTORS_CHANNEL);
         }
         monitor.subscribe(Config.SUBSCRIBE_CHANNEL);
-        log "monitor.subscribe(Config.SUBSCRIBE_CHANNEL);" at DEBUG;
+        log "monitor.subscribe(Config.SUBSCRIBE_CHANNEL);" at INFO;
     }
 
     action onStartRotationMotor(StartRotationMotor startEvent) {
-        // TODO
+        log "Got start StartRotationMotor event" at INFO;
+        string rotationMotorChannel := "Motor_Rotation";
+        sequence<any> params := new sequence<any>;
+        params.append(config.ROTATE_MOTOR_PORT);
+
+        // Listen for BP action responses...
+        on all BrickPiActionResult() as reading and not StopRotationMotor() {
+            log "Got rotation motor position " + reading.toString() at INFO;
+            send RotationMotorReading(<integer>reading.value) to startEvent.destChannel;
+        }
+        
+        on all wait(startEvent.intervalSecs) and not StopRotationMotor() {
+            log "Requesting rotation motor position" at DEBUG;
+            send InvokeBrickPiAction("get_motor_encoder", params, rotationMotorChannel) to InvokeBrickPiAction.CHANNEL;
+        }
+
+        on StopRotationMotor() {
+            log "got StopRotationMotor" at DEBUG;
+            die;
+        }
+
+        monitor.subscribe(Constants.MOTORS_CHANNEL);  // TODO: Do we need this or is it inherited from spawning context?
+        monitor.subscribe(rotationMotorChannel);
     }
 }
