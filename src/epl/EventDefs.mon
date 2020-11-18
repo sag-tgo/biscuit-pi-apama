@@ -84,7 +84,7 @@ event StopPollingColorSensor {
 
 event StartRotationMotor {
     /**
-     * Relative target position.
+     * Relative target position in degrees. Positive is towards the limit sensor.
      */
     integer targetPosRelative;
 

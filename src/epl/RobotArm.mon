@@ -28,8 +28,8 @@ monitor RobotArm {
         send StartPollingGyroSensor(0.5, myChannel) to Constants.SENSORS_CHANNEL;
         log "sent StartPollingGyroSensor" at INFO;
 
-        send StartRotationMotor(5, 0.1, myChannel) to Constants.MOTORS_CHANNEL;
-        log "sent StartRotationMotor" at INFO;
+        //send StartRotationMotor(50, 0.1, myChannel) to Constants.MOTORS_CHANNEL;
+        //log "sent StartRotationMotor" at INFO;
 
         on all ColorSensorReading() as e {
             log e.toString() at INFO;

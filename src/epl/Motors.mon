@@ -37,22 +37,48 @@ monitor Motors {
         string rotationMotorChannel := "Motor_Rotation";
         sequence<any> params := new sequence<any>;
         params.append(config.ROTATE_MOTOR_PORT);
+        params.append(startEvent.targetPosRelative);
 
-        // Listen for BP action responses...
-        on all BrickPiActionResult() as reading and not StopRotationMotor() {
-            log "Got rotation motor position " + reading.toString() at INFO;
-            send RotationMotorReading(<integer>reading.value) to startEvent.destChannel;
+        on BrickPiActionResult() as startAck {
+            log "Motor movement started" at INFO;
+            params.clear();
+            params.append(config.ROTATE_MOTOR_PORT);
+
+            // Listen for BP action responses...
+            on all BrickPiActionResult() as reading and not StopRotationMotor() {
+                log "Got rotation motor position " + reading.toString() at INFO;
+                integer position := <integer>reading.value;
+                send RotationMotorReading(<integer>reading.value) to startEvent.destChannel;
+                boolean targetReached := false;
+                if startEvent.targetPosRelative >= 0 {
+                    if position >= startEvent.targetPosRelative {
+                        targetReached := true;
+                    }
+                } else if startEvent.targetPosRelative < 0 {
+                    if position <= startEvent.targetPosRelative {
+                        targetReached := true;
+                    }
+                }
+
+                if targetReached {
+                    log "target reached!" at INFO;
+                    route StopRotationMotor();
+                }
+            }
+            
+            on all wait(startEvent.intervalSecs) and not StopRotationMotor() {
+                log "Requesting rotation motor position" at DEBUG;
+                send InvokeBrickPiAction("get_motor_encoder", params, rotationMotorChannel) to InvokeBrickPiAction.CHANNEL;
+            }
+
+            on StopRotationMotor() {
+                log "got StopRotationMotor" at INFO;
+                die;
+            }
         }
         
-        on all wait(startEvent.intervalSecs) and not StopRotationMotor() {
-            log "Requesting rotation motor position" at DEBUG;
-            send InvokeBrickPiAction("get_motor_encoder", params, rotationMotorChannel) to InvokeBrickPiAction.CHANNEL;
-        }
-
-        on StopRotationMotor() {
-            log "got StopRotationMotor" at DEBUG;
-            die;
-        }
+        send InvokeBrickPiAction("set_motor_position_relative", params, rotationMotorChannel) to InvokeBrickPiAction.CHANNEL;
+        // What happens if we change params here?
 
         monitor.subscribe(Constants.MOTORS_CHANNEL);  // TODO: Do we need this or is it inherited from spawning context?
         monitor.subscribe(rotationMotorChannel);
