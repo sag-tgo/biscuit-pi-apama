@@ -9,7 +9,7 @@
  */
 package com.softwareag.apama.eplclub;
 
-event MoveToHomePosition {
+event StartCalibration {
 }
 
 monitor RobotArm {
@@ -24,13 +24,12 @@ monitor RobotArm {
         //send StartPollingColorSensor(2.0, myChannel) to Constants.SENSORS_CHANNEL;
         //log "sent StartPollingColorSensor" at INFO;
 
-        //send StartPollingGyroSensor(0.5, myChannel) to Constants.SENSORS_CHANNEL;
-        //log "sent StartPollingGyroSensor" at INFO;
+        
 
         //send StartRotationMotor(50, 0.1, myChannel) to Constants.MOTORS_CHANNEL;
         //log "sent StartRotationMotor" at INFO;
 
-        on all MoveToHomePosition() {
+        on all StartCalibration() {
             on LimitSensorReading() as e {
                 // First limit sensor reading, if not pressed start moving arm.
                 if not e.value {
@@ -52,10 +51,13 @@ monitor RobotArm {
             send StartPollingLimitSensor(0.05, myChannel) to Constants.SENSORS_CHANNEL;
             log "sent StartPollingLimitSensor" at INFO;
 
-            //send StartVerticalMotor(-19 * 5, 0.1, myChannel) to Constants.MOTORS_CHANNEL;
+            send StartPollingGyroSensor(0.5, myChannel) to Constants.SENSORS_CHANNEL;
+            log "sent StartPollingGyroSensor" at INFO;
+
+            //send StartVerticalMotor(5 * 5, 0.1, myChannel) to Constants.MOTORS_CHANNEL;
         }
 
-        route MoveToHomePosition();
+        route StartCalibration();
 
         on all ColorSensorReading() as e {
             log e.toString() at INFO;

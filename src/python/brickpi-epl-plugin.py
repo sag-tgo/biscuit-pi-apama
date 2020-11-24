@@ -53,6 +53,7 @@ class BrickPiPlugin(EPLPluginBase):
         # Vertical
         self.bp.offset_motor_encoder(MOTOR_ARM_VERTICAL, self.bp.get_motor_encoder(MOTOR_ARM_VERTICAL))
         self.bp.set_motor_limits(MOTOR_ARM_VERTICAL, 20, 45)
+        self.bp.set_motor_position_kp(MOTOR_ARM_VERTICAL, 75)  # Default 25
         config["VERTICAL_MOTOR_PORT"] = MOTOR_ARM_VERTICAL
 
         # Rotation

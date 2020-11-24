@@ -104,10 +104,14 @@ monitor Motors {
 
             // Listen for BP action responses...
             on all BrickPiActionResult() as reading and not StopVerticalMotor() {
-                log "Got vertical motor position " + reading.toString() at INFO;
-                integer position := <integer>reading.value;
-                send VerticalMotorReading(<integer>reading.value) to startEvent.destChannel;
-                boolean targetReached := false;
+                sequence<any> seq := <sequence<any>>reading.value;
+                integer flags := <integer>seq[0];
+                boolean overloaded := (flags and 0x01) != 0;  // TODO: Not sure if this is working
+                log "Overloaded? " + overloaded.toString() at INFO;
+                integer position := <integer>seq[2];
+                log "Got vertical motor position " + position.toString() at INFO;
+                send VerticalMotorReading(position) to startEvent.destChannel;
+                boolean targetReached := overloaded;
                 if startEvent.targetPosRelative >= 0 {
                     if position >= startEvent.targetPosRelative {
                         targetReached := true;
@@ -128,7 +132,7 @@ monitor Motors {
                 log "Requesting vertical motor position" at DEBUG;
                 sequence<any> params := new sequence<any>;
                 params.append(config.VERTICAL_MOTOR_PORT);
-                send InvokeBrickPiAction("get_motor_encoder", params, verticalMotorChannel) to InvokeBrickPiAction.CHANNEL;
+                send InvokeBrickPiAction("get_motor_status", params, verticalMotorChannel) to InvokeBrickPiAction.CHANNEL;
             }
 
             on StopVerticalMotor() {
