@@ -31,24 +31,28 @@ monitor RobotArm {
         //log "sent StartRotationMotor" at INFO;
 
         on all MoveToHomePosition() {
-            on all LimitSensorReading() as e {
-                log e.toString() at INFO;
-                if e.value {
-                    log "limit sensor hit! Stopping motor & limit sensor polling..." at INFO;
-                    send StopRotationMotor() to Constants.MOTORS_CHANNEL;
-                    send StopPollingLimitSensor() to Constants.SENSORS_CHANNEL;
-                    // Reset motor encoder position?
+            on LimitSensorReading() as e {
+                // First limit sensor reading, if not pressed start moving arm.
+                if not e.value {
+                    // 360 = 1 whole rotation (the furthest it can possibly be from "home")
+                    // *3 because the gear ratio is 36:12 (or 3:1) - three complete 
+                    // rotations of the motor to one of the arm.
+                    send StartRotationMotor(360 * 3, 0.1, myChannel) to Constants.MOTORS_CHANNEL;
+                    log "sent StartRotationMotor" at INFO;
                 }
+            }
+
+            on LimitSensorReading(value=true) as e {
+                log "limit sensor hit! Stopping motor & limit sensor polling..." at INFO;
+                send StopRotationMotor() to Constants.MOTORS_CHANNEL;
+                send StopPollingLimitSensor() to Constants.SENSORS_CHANNEL;
+                // Reset motor encoder position?
             }
 
             send StartPollingLimitSensor(0.05, myChannel) to Constants.SENSORS_CHANNEL;
             log "sent StartPollingLimitSensor" at INFO;
 
-            // 360 = 1 whole rotation (the furthest it can possibly be from "home")
-            // *3 because the gear ratio is 36:12 (or 3:1) - three complete 
-            // rotations of the motor to one of the arm.
-            send StartRotationMotor(360 * 3, 0.1, myChannel) to Constants.MOTORS_CHANNEL;
-            log "sent StartRotationMotor" at INFO;
+            //send StartRotationMotor(-200, 0.1, myChannel) to Constants.MOTORS_CHANNEL;
         }
 
         route MoveToHomePosition();
