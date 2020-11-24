@@ -35,14 +35,10 @@ monitor Motors {
     action onStartRotationMotor(StartRotationMotor startEvent) {
         log "Got start StartRotationMotor event" at INFO;
         string rotationMotorChannel := "Motor_Rotation";
-        sequence<any> params := new sequence<any>;
-        params.append(config.ROTATE_MOTOR_PORT);
-        params.append(startEvent.targetPosRelative);
+        
 
         on BrickPiActionResult() as startAck {
             log "Motor movement started" at INFO;
-            params.clear();
-            params.append(config.ROTATE_MOTOR_PORT);
 
             // Listen for BP action responses...
             on all BrickPiActionResult() as reading and not StopRotationMotor() {
@@ -68,15 +64,24 @@ monitor Motors {
             
             on all wait(startEvent.intervalSecs) and not StopRotationMotor() {
                 log "Requesting rotation motor position" at DEBUG;
+                sequence<any> params := new sequence<any>;
+                params.append(config.ROTATE_MOTOR_PORT);
                 send InvokeBrickPiAction("get_motor_encoder", params, rotationMotorChannel) to InvokeBrickPiAction.CHANNEL;
             }
 
             on StopRotationMotor() {
                 log "got StopRotationMotor" at INFO;
+                sequence<any> params := new sequence<any>;
+                params.append(config.ROTATE_MOTOR_PORT);
+                params.append(0);
+                send InvokeBrickPiAction("set_motor_dps", params, rotationMotorChannel) to InvokeBrickPiAction.CHANNEL;
                 die;
             }
         }
         
+        sequence<any> params := new sequence<any>;
+        params.append(config.ROTATE_MOTOR_PORT);
+        params.append(startEvent.targetPosRelative);
         send InvokeBrickPiAction("set_motor_position_relative", params, rotationMotorChannel) to InvokeBrickPiAction.CHANNEL;
         // What happens if we change params here?
 

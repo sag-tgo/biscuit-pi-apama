@@ -57,7 +57,7 @@ class BrickPiPlugin(EPLPluginBase):
 
         # Rotation
         self.bp.offset_motor_encoder(MOTOR_ARM_ROTATE, self.bp.get_motor_encoder(MOTOR_ARM_ROTATE))
-        self.bp.set_motor_limits(MOTOR_ARM_ROTATE, 20, 45)
+        self.bp.set_motor_limits(MOTOR_ARM_ROTATE, 20, 30)
         self.bp.set_motor_position_kp(MOTOR_ARM_ROTATE, 75)  # Default 25
         config["ROTATE_MOTOR_PORT"] = MOTOR_ARM_ROTATE
 
