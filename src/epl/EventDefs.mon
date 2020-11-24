@@ -99,6 +99,40 @@ event RotationMotorReading {
 event StopRotationMotor {
 }
 
+event StartClawMotor {
+    /**
+     * Relative target position in degrees.
+     */
+    integer targetPosRelative;
+
+    float intervalSecs; // Polling
+    string destChannel;
+}
+
+event ClawMotorReading {
+    integer position;
+}
+
+event StopClawMotor {
+}
+
+event StartVerticalMotor {
+    /**
+     * Relative target position in degrees. Negative is towards the sky.
+     */
+    integer targetPosRelative;
+
+    float intervalSecs; // Polling
+    string destChannel;
+}
+
+event VerticalMotorReading {
+    integer position;
+}
+
+event StopVerticalMotor {
+}
+
 event Config {
     constant string SUBSCRIBE_CHANNEL := "CONFIG";
 

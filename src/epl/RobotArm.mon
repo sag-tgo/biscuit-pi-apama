@@ -52,7 +52,7 @@ monitor RobotArm {
             send StartPollingLimitSensor(0.05, myChannel) to Constants.SENSORS_CHANNEL;
             log "sent StartPollingLimitSensor" at INFO;
 
-            //send StartRotationMotor(-200, 0.1, myChannel) to Constants.MOTORS_CHANNEL;
+            //send StartVerticalMotor(-19 * 5, 0.1, myChannel) to Constants.MOTORS_CHANNEL;
         }
 
         route MoveToHomePosition();

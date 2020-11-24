@@ -26,6 +26,11 @@ monitor Motors {
                 spawn onStartRotationMotor(e) to rotationMotorContext;
             }
 
+            context verticalMotorContext := context("vertical");
+            on all StartVerticalMotor() as e {
+                spawn onStartVerticalMotor(e) to rotationMotorContext;
+            }
+
             monitor.subscribe(Constants.MOTORS_CHANNEL);
         }
         monitor.subscribe(Config.SUBSCRIBE_CHANNEL);
@@ -88,4 +93,62 @@ monitor Motors {
         monitor.subscribe(Constants.MOTORS_CHANNEL);  // TODO: Do we need this or is it inherited from spawning context?
         monitor.subscribe(rotationMotorChannel);
     }
+
+    action onStartVerticalMotor(StartVerticalMotor startEvent) {
+        log "Got start StartVerticalMotor event" at INFO;
+        string verticalMotorChannel := "Motor_Vertical";
+        
+
+        on BrickPiActionResult() as startAck {
+            log "Motor movement started" at INFO;
+
+            // Listen for BP action responses...
+            on all BrickPiActionResult() as reading and not StopVerticalMotor() {
+                log "Got vertical motor position " + reading.toString() at INFO;
+                integer position := <integer>reading.value;
+                send VerticalMotorReading(<integer>reading.value) to startEvent.destChannel;
+                boolean targetReached := false;
+                if startEvent.targetPosRelative >= 0 {
+                    if position >= startEvent.targetPosRelative {
+                        targetReached := true;
+                    }
+                } else if startEvent.targetPosRelative < 0 {
+                    if position <= startEvent.targetPosRelative {
+                        targetReached := true;
+                    }
+                }
+
+                if targetReached {
+                    log "target reached!" at INFO;
+                    route StopVerticalMotor();
+                }
+            }
+            
+            on all wait(startEvent.intervalSecs) and not StopVerticalMotor() {
+                log "Requesting vertical motor position" at DEBUG;
+                sequence<any> params := new sequence<any>;
+                params.append(config.VERTICAL_MOTOR_PORT);
+                send InvokeBrickPiAction("get_motor_encoder", params, verticalMotorChannel) to InvokeBrickPiAction.CHANNEL;
+            }
+
+            on StopVerticalMotor() {
+                log "got StopVerticalMotor" at INFO;
+                sequence<any> params := new sequence<any>;
+                params.append(config.VERTICAL_MOTOR_PORT);
+                params.append(0);
+                send InvokeBrickPiAction("set_motor_dps", params, verticalMotorChannel) to InvokeBrickPiAction.CHANNEL;
+                die;
+            }
+        }
+        
+        sequence<any> params := new sequence<any>;
+        params.append(config.VERTICAL_MOTOR_PORT);
+        params.append(startEvent.targetPosRelative);
+        send InvokeBrickPiAction("set_motor_position_relative", params, verticalMotorChannel) to InvokeBrickPiAction.CHANNEL;
+        // What happens if we change params here?
+
+        monitor.subscribe(Constants.MOTORS_CHANNEL);  // TODO: Do we need this or is it inherited from spawning context?
+        monitor.subscribe(verticalMotorChannel);
+    }
+
 }
