@@ -54,7 +54,17 @@ monitor RobotArm {
             send StartPollingGyroSensor(0.5, myChannel) to Constants.SENSORS_CHANNEL;
             log "sent StartPollingGyroSensor" at INFO;
 
-            //send StartVerticalMotor(5 * 5, 0.1, myChannel) to Constants.MOTORS_CHANNEL;
+            send StartVerticalMotor(5 * 5, 0.1, myChannel) to Constants.MOTORS_CHANNEL;
+
+            // 0.5 second with no change in reading... stop!
+            on all VerticalMotorReading() as reading {
+                log "got VerticalMotorReading: " + reading.toString() at INFO;
+                on VerticalMotorReading(position=reading.position) 
+                        -> VerticalMotorReading(position=reading.position) within(0.5) {
+                    log "Stopping vertical motor" at INFO;
+                    send StopVerticalMotor() to Constants.MOTORS_CHANNEL;
+                } // may create quite a number of listeners?
+            }
         }
 
         route StartCalibration();
