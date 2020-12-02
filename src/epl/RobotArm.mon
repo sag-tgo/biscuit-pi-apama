@@ -12,6 +12,12 @@ package com.softwareag.apama.eplclub;
 event StartCalibration {
 }
 
+event ArmVerticalTargetReached {
+}
+
+event ArmRotationTargetReached {
+}
+
 monitor RobotArm {
     
     
@@ -30,6 +36,9 @@ monitor RobotArm {
         //log "sent StartRotationMotor" at INFO;
 
         on all StartCalibration() {
+            // TODO: Separate this listener body into actions - one for rotation, one for vertical, one for claw?
+            monitor.subscribe(Constants.MOTORS_CHANNEL);
+
             on LimitSensorReading() as e {
                 // First limit sensor reading, if not pressed start moving arm.
                 if not e.value {
@@ -51,19 +60,32 @@ monitor RobotArm {
             send StartPollingLimitSensor(0.05, myChannel) to Constants.SENSORS_CHANNEL;
             log "sent StartPollingLimitSensor" at INFO;
 
-            send StartPollingGyroSensor(0.5, myChannel) to Constants.SENSORS_CHANNEL;
+            send StartPollingGyroSensor(0.1, myChannel) to Constants.SENSORS_CHANNEL;
             log "sent StartPollingGyroSensor" at INFO;
 
-            send StartVerticalMotor(5 * 5, 0.1, myChannel) to Constants.MOTORS_CHANNEL;
+            send StartVerticalMotor(90 * 5, 0.1, myChannel) to Constants.MOTORS_CHANNEL;
 
             // 0.5 second with no change in reading... stop!
-            on all VerticalMotorReading() as reading {
+            on all VerticalMotorReading() as reading and not ArmVerticalTargetReached() {
                 log "got VerticalMotorReading: " + reading.toString() at INFO;
                 on VerticalMotorReading(position=reading.position) 
                         -> VerticalMotorReading(position=reading.position) within(0.5) {
-                    log "Stopping vertical motor" at INFO;
-                    send StopVerticalMotor() to Constants.MOTORS_CHANNEL;
+                    log "ArmVerticalTargetReached from motor readings" at INFO;
+                    route ArmVerticalTargetReached();
                 } // may create quite a number of listeners?
+            }
+
+            on ArmVerticalTargetReached() {
+                log "ArmVerticalTargetReached" at INFO;
+                send StopVerticalMotor() to Constants.MOTORS_CHANNEL;
+                send StopPollingGyroSensor() to Constants.SENSORS_CHANNEL;
+            }
+
+            on all GyroSensorReading() as e and not ArmVerticalTargetReached() {
+                on GyroSensorReading(angle=e.angle, acceleration=0) {
+                    log "ArmVerticalTargetReached from gyro sensor" at INFO;
+                    route ArmVerticalTargetReached();
+                }
             }
         }
 
