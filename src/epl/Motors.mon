@@ -52,11 +52,11 @@ monitor Motors {
                 send RotationMotorReading(<integer>reading.value) to startEvent.destChannel;
                 boolean targetReached := false;
                 if startEvent.targetPosRelative >= 0 {
-                    if position >= startEvent.targetPosRelative {
+                    if position >= (startEvent.targetPosRelative - 2) {
                         targetReached := true;
                     }
                 } else if startEvent.targetPosRelative < 0 {
-                    if position <= startEvent.targetPosRelative {
+                    if position <= (startEvent.targetPosRelative + 2) {
                         targetReached := true;
                     }
                 }
@@ -113,11 +113,11 @@ monitor Motors {
                 send VerticalMotorReading(position) to startEvent.destChannel;
                 boolean targetReached := overloaded;
                 if startEvent.targetPosRelative >= 0 {
-                    if position >= startEvent.targetPosRelative {
+                    if position >= (startEvent.targetPosRelative - 2) {
                         targetReached := true;
                     }
                 } else if startEvent.targetPosRelative < 0 {
-                    if position <= startEvent.targetPosRelative {
+                    if position <= (startEvent.targetPosRelative + 2) {
                         targetReached := true;
                     }
                 }
