@@ -19,8 +19,12 @@ event ArmRotationTargetReached {
 }
 
 event GrabberTargetReached {
+    integer steps;
 }
 
+/**
+ * 
+ */
 monitor RobotArm {
     
     constant string CHANNEL := "ROBOT_ARM";
@@ -35,13 +39,35 @@ monitor RobotArm {
         on all StartCalibration() {
             monitor.subscribe(Constants.MOTORS_CHANNEL);
 
-            startRotationCalibration();
+            //startRotationCalibration();
             // startVerticalCalibration(); // TODO: Improve - back off once at fully down position.
+            integer targetPosition := 180;
+            startGrabberMovement(targetPosition);
+            on GrabberTargetReached() as forwardTarget {
+                log "grabber motor moved forwards" at INFO;
+                on wait (1.0) { // TODO: Avoid this!
+                    startGrabberMovement(-targetPosition);
+                }
+                on GrabberTargetReached() as backwardTarget {
+                    log "grabber motor moved backwards" at INFO;
+                    // Move motor to half way between limits (fully open)
+                    on wait(1.0) { // TODO: Avoid this!
+                        integer totalMovement := forwardTarget.steps.abs() + backwardTarget.steps.abs();
+                        startGrabberMovement(totalMovement / 2);
+                    }
+
+                    on GrabberTargetReached() as e {
+                        log "grabber calibrated" at INFO;
+                        // TODO: send grabber calibrated event.
+                    }
+                }
+            }
 
             on ArmRotationTargetReached() 
-                and ArmVerticalTargetReached()
-                and GrabberTargetReached() {
+                and ArmVerticalTargetReached() {
                 log "Calibrated" at INFO;
+                // TODO: reset motor encoders to 0
+                // TODO: Listen for colour sensor change events (? -> colour)
             }
         }
 
@@ -52,6 +78,9 @@ monitor RobotArm {
         }
     }
 
+    /**
+     *
+     */
     action startRotationCalibration() {
         on LimitSensorReading() as e {
             // First limit sensor reading, if not pressed start moving arm.
@@ -76,6 +105,9 @@ monitor RobotArm {
         log "sent StartPollingLimitSensor" at INFO;
     }
 
+    /**
+     *
+     */
     action startVerticalCalibration() {
         send StartPollingGyroSensor(0.1, CHANNEL) to Constants.SENSORS_CHANNEL;
         log "sent StartPollingGyroSensor" at INFO;
@@ -103,6 +135,29 @@ monitor RobotArm {
                 log "ArmVerticalTargetReached from gyro sensor" at INFO;
                 route ArmVerticalTargetReached();
             }
+        }
+    }
+
+    /**
+     *
+     */
+    action startGrabberMovement(integer targetPosition) {
+        log "moving grabber motor to position " + targetPosition.toString();
+        send StartClawMotor(targetPosition, 0.1, CHANNEL) to Constants.MOTORS_CHANNEL;
+
+        // 0.5 second with no change in reading... stop!
+        on all ClawMotorReading() as reading and not GrabberTargetReached() {
+            log "got ClawMotorReading: " + reading.toString() at INFO;
+            on ClawMotorReading(position=reading.position) 
+                    -> ClawMotorReading(position=reading.position) within(0.5) {
+                log "GrabberTargetReached from motor readings" at INFO;
+                route GrabberTargetReached(reading.position);
+            } // may create quite a number of listeners?
+        }
+
+        on GrabberTargetReached() {
+            log "GrabberTargetReached" at INFO;
+            send StopClawMotor() to Constants.MOTORS_CHANNEL;
         }
     }
 }

@@ -31,6 +31,11 @@ monitor Motors {
                 spawn onStartVerticalMotor(e) to rotationMotorContext;
             }
 
+            context clawMotorContext := context("claw");
+            on all StartClawMotor() as e {
+                spawn onStartClawMotor(e) to clawMotorContext;
+            }
+
             monitor.subscribe(Constants.MOTORS_CHANNEL);
         }
         monitor.subscribe(Config.SUBSCRIBE_CHANNEL);
@@ -43,7 +48,7 @@ monitor Motors {
         
 
         on BrickPiActionResult() as startAck {
-            log "Motor movement started" at INFO;
+            log "Rotation motor movement started" at INFO;
 
             // Listen for BP action responses...
             on all BrickPiActionResult() as reading and not StopRotationMotor() {
@@ -62,7 +67,7 @@ monitor Motors {
                 }
 
                 if targetReached {
-                    log "target reached!" at INFO;
+                    log "rotation target reached!" at INFO;
                     route StopRotationMotor();
                 }
             }
@@ -100,7 +105,7 @@ monitor Motors {
         
 
         on BrickPiActionResult() as startAck {
-            log "Motor movement started" at INFO;
+            log "Vertical motor movement started" at INFO;
 
             // Listen for BP action responses...
             on all BrickPiActionResult() as reading and not StopVerticalMotor() {
@@ -123,7 +128,7 @@ monitor Motors {
                 }
 
                 if targetReached {
-                    log "target reached!" at INFO;
+                    log "vertical target reached!" at INFO;
                     route StopVerticalMotor();
                 }
             }
@@ -153,6 +158,68 @@ monitor Motors {
 
         monitor.subscribe(Constants.MOTORS_CHANNEL);  // TODO: Do we need this or is it inherited from spawning context?
         monitor.subscribe(verticalMotorChannel);
+    }
+
+    action onStartClawMotor(StartClawMotor startEvent) {
+        log "Got start StartClawMotor event" at INFO;
+        string clawMotorChannel := "Motor_Claw";
+        
+
+        on BrickPiActionResult() as startAck {
+            log "Claw motor movement started" at INFO;
+
+            // Listen for BP action responses...
+            on all BrickPiActionResult() as reading and not StopClawMotor() {
+                log reading.toString() at INFO;
+                sequence<any> seq := <sequence<any>>reading.value;
+                integer flags := <integer>seq[0];
+                boolean overloaded := (flags and 0x01) != 0;  // TODO: Not sure if this is working
+                log "Overloaded? " + overloaded.toString() at INFO;
+                integer position := <integer>seq[2];
+                log "Got claw motor position " + position.toString() at INFO;
+                send ClawMotorReading(position) to startEvent.destChannel;
+                boolean targetReached := overloaded;
+                if startEvent.targetPosRelative >= 0 {
+                    if position >= (startEvent.targetPosRelative - 2) {
+                        targetReached := true;
+                    }
+                } else if startEvent.targetPosRelative < 0 {
+                    if position <= (startEvent.targetPosRelative + 2) {
+                        targetReached := true;
+                    }
+                }
+
+                if targetReached {
+                    log "claw target reached!" at INFO;
+                    route StopClawMotor();
+                }
+            }
+            
+            on all wait(startEvent.intervalSecs) and not StopClawMotor() {
+                log "Requesting claw motor position" at DEBUG;
+                sequence<any> params := new sequence<any>;
+                params.append(config.GRABBER_MOTOR_PORT);
+                send InvokeBrickPiAction("get_motor_status", params, clawMotorChannel) to InvokeBrickPiAction.CHANNEL;
+            }
+
+            on StopClawMotor() {
+                log "got StopClawMotor" at INFO;
+                sequence<any> params := new sequence<any>;
+                params.append(config.GRABBER_MOTOR_PORT);
+                params.append(0);
+                send InvokeBrickPiAction("set_motor_dps", params, clawMotorChannel) to InvokeBrickPiAction.CHANNEL;
+                die;
+            }
+        }
+        
+        sequence<any> params := new sequence<any>;
+        params.append(config.GRABBER_MOTOR_PORT);
+        params.append(startEvent.targetPosRelative);
+        send InvokeBrickPiAction("set_motor_position_relative", params, clawMotorChannel) to InvokeBrickPiAction.CHANNEL;
+        // What happens if we change params here?
+
+        monitor.subscribe(Constants.MOTORS_CHANNEL);  // TODO: Do we need this or is it inherited from spawning context?
+        monitor.subscribe(clawMotorChannel);
     }
 
 }
