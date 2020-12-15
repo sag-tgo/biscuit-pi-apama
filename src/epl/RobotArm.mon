@@ -18,13 +18,14 @@ event ArmVerticalTargetReached {
 event ArmRotationTargetReached {
 }
 
+event GrabberTargetReached {
+}
+
 monitor RobotArm {
     
     constant string CHANNEL := "ROBOT_ARM";
     
     action onload() {
-        
-
         monitor.subscribe(CHANNEL);
         log "monitor.subscribe(ROBOT_ARM);" at INFO;
 
@@ -35,7 +36,13 @@ monitor RobotArm {
             monitor.subscribe(Constants.MOTORS_CHANNEL);
 
             startRotationCalibration();
-            startVerticalCalibration();
+            // startVerticalCalibration(); // TODO: Improve - back off once at fully down position.
+
+            on ArmRotationTargetReached() 
+                and ArmVerticalTargetReached()
+                and GrabberTargetReached() {
+                log "Calibrated" at INFO;
+            }
         }
 
         route StartCalibration();
@@ -43,14 +50,6 @@ monitor RobotArm {
         on all ColorSensorReading() as e {
             log e.toString() at INFO;
         }
-        
-        /*
-        on wait(5.0) {
-            send StopPollingLimitSensor() to Constants.SENSORS_CHANNEL;
-            send StopPollingGyroSensor() to Constants.SENSORS_CHANNEL;
-            send StopRotationMotor() to Constants.MOTORS_CHANNEL;
-        }
-        */
     }
 
     action startRotationCalibration() {
@@ -70,6 +69,7 @@ monitor RobotArm {
             send StopRotationMotor() to Constants.MOTORS_CHANNEL;
             send StopPollingLimitSensor() to Constants.SENSORS_CHANNEL;
             // Reset motor encoder position?
+            route ArmRotationTargetReached();
         }
 
         send StartPollingLimitSensor(0.05, CHANNEL) to Constants.SENSORS_CHANNEL;
