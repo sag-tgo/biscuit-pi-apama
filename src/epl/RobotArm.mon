@@ -40,28 +40,9 @@ monitor RobotArm {
             monitor.subscribe(Constants.MOTORS_CHANNEL);
 
             //startRotationCalibration();
-            // startVerticalCalibration(); // TODO: Improve - back off once at fully down position.
-            integer targetPosition := 180;
-            startGrabberMovement(targetPosition);
-            on GrabberTargetReached() as forwardTarget {
-                log "grabber motor moved forwards" at INFO;
-                on wait (1.0) { // TODO: Avoid this!
-                    startGrabberMovement(-targetPosition);
-                }
-                on GrabberTargetReached() as backwardTarget {
-                    log "grabber motor moved backwards" at INFO;
-                    // Move motor to half way between limits (fully open)
-                    on wait(1.0) { // TODO: Avoid this!
-                        integer totalMovement := forwardTarget.steps.abs() + backwardTarget.steps.abs();
-                        startGrabberMovement(totalMovement / 2);
-                    }
-
-                    on GrabberTargetReached() as e {
-                        log "grabber calibrated" at INFO;
-                        // TODO: send grabber calibrated event.
-                    }
-                }
-            }
+            //startVerticalCalibration(); // TODO: Improve - back off once at fully down position.
+            startGrabberCalibration();
+            
 
             on ArmRotationTargetReached() 
                 and ArmVerticalTargetReached() {
@@ -134,6 +115,33 @@ monitor RobotArm {
             on GyroSensorReading(angle=e.angle, acceleration=0) {
                 log "ArmVerticalTargetReached from gyro sensor" at INFO;
                 route ArmVerticalTargetReached();
+            }
+        }
+    }
+
+    /**
+     * 
+     */
+    action startGrabberCalibration() {
+        integer targetPosition := 180;
+        startGrabberMovement(targetPosition);
+        on GrabberTargetReached() as forwardTarget {
+            log "grabber motor moved forwards" at INFO;
+            on wait (1.0) { // TODO: Avoid this!
+                startGrabberMovement(-targetPosition);
+            }
+            on GrabberTargetReached() as backwardTarget {
+                log "grabber motor moved backwards" at INFO;
+                // Move motor to half way between limits (fully open)
+                on wait(1.0) { // TODO: Avoid this!
+                    integer totalMovement := forwardTarget.steps.abs() + backwardTarget.steps.abs();
+                    startGrabberMovement(totalMovement / 2);
+                }
+
+                on GrabberTargetReached() as e {
+                    log "grabber calibrated" at INFO;
+                    // TODO: send grabber calibrated event.
+                }
             }
         }
     }
