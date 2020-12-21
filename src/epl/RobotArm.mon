@@ -22,6 +22,10 @@ event GrabberTargetReached {
     integer steps;
 }
 
+event GrabberCalibrated {
+    integer closePosition;
+}
+
 /**
  * 
  */
@@ -39,13 +43,15 @@ monitor RobotArm {
         on all StartCalibration() {
             monitor.subscribe(Constants.MOTORS_CHANNEL);
 
-            //startRotationCalibration();
+            startRotationCalibration();
             //startVerticalCalibration(); // TODO: Improve - back off once at fully down position.
             startGrabberCalibration();
             
 
             on ArmRotationTargetReached() 
-                and ArmVerticalTargetReached() {
+                and ArmVerticalTargetReached()
+                and GrabberCalibrated()
+            {
                 log "Calibrated" at INFO;
                 // TODO: reset motor encoders to 0
                 // TODO: Listen for colour sensor change events (? -> colour)
@@ -132,15 +138,17 @@ monitor RobotArm {
             }
             on GrabberTargetReached() as backwardTarget {
                 log "grabber motor moved backwards" at INFO;
+                integer closePosition := 0;
                 // Move motor to half way between limits (fully open)
                 on wait(1.0) { // TODO: Avoid this!
                     integer totalMovement := forwardTarget.steps.abs() + backwardTarget.steps.abs();
-                    startGrabberMovement(totalMovement / 2);
+                    closePosition := totalMovement / 2;
+                    startGrabberMovement(closePosition);
                 }
 
                 on GrabberTargetReached() as e {
                     log "grabber calibrated" at INFO;
-                    // TODO: send grabber calibrated event.
+                    route GrabberCalibrated(closePosition);
                 }
             }
         }
