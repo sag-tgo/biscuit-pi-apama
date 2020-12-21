@@ -44,7 +44,7 @@ monitor RobotArm {
             monitor.subscribe(Constants.MOTORS_CHANNEL);
 
             startRotationCalibration();
-            //startVerticalCalibration(); // TODO: Improve - back off once at fully down position.
+            startVerticalCalibration();
             startGrabberCalibration();
             
 
@@ -115,6 +115,25 @@ monitor RobotArm {
             log "ArmVerticalTargetReached" at INFO;
             send StopVerticalMotor() to Constants.MOTORS_CHANNEL;
             send StopPollingGyroSensor() to Constants.SENSORS_CHANNEL;
+            // Move arm back up
+            on wait (1.0) {
+
+                on ArmVerticalTargetReached() {
+                    send StopVerticalMotor() to Constants.MOTORS_CHANNEL;
+                    log "Arm vertical calibrated" at INFO;
+                }
+
+                on all VerticalMotorReading() as reading and not ArmVerticalTargetReached() {
+                    log "*** got VerticalMotorReading: " + reading.toString() at INFO;
+                    on VerticalMotorReading(position=reading.position) 
+                            -> VerticalMotorReading(position=reading.position) within(0.5) {
+                        log "*** ArmVerticalTargetReached from motor readings" at INFO;
+                        route ArmVerticalTargetReached();
+                    } // may create quite a number of listeners?
+                }
+
+                send StartVerticalMotor(-45 * 5, 0.1, CHANNEL) to Constants.MOTORS_CHANNEL;
+            }
         }
 
         on all GyroSensorReading() as e and not ArmVerticalTargetReached() {
