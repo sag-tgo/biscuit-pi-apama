@@ -13,6 +13,7 @@ event StartCalibration {
 }
 
 event ArmVerticalTargetReached {
+    integer angle;
 }
 
 event ArmRotationTargetReached {
@@ -26,19 +27,33 @@ event GrabberCalibrated {
     integer closePosition;
 }
 
+event VerticalCalibrated {
+    integer angle;
+}
+
+event PickedUpBiscuit {
+
+}
+
 /**
  * 
  */
 monitor RobotArm {
     
     constant string CHANNEL := "ROBOT_ARM";
+
+    VerticalCalibrated verticalCalibration;
+
+    GrabberCalibrated grabberCalibration;
     
     action onload() {
         monitor.subscribe(CHANNEL);
         log "monitor.subscribe(ROBOT_ARM);" at INFO;
 
-        //send StartPollingColorSensor(2.0, CHANNEL) to Constants.SENSORS_CHANNEL;
-        //log "sent StartPollingColorSensor" at INFO;
+        //send StartPollingGyroSensor(0.5, CHANNEL) to Constants.SENSORS_CHANNEL;
+        //on all GyroSensorReading() as e {
+        //    log e.toString() at INFO;
+        //}
 
         on all StartCalibration() {
             monitor.subscribe(Constants.MOTORS_CHANNEL);
@@ -46,23 +61,87 @@ monitor RobotArm {
             startRotationCalibration();
             startVerticalCalibration();
             startGrabberCalibration();
-            
+
+            on ArmRotationTargetReached() as e {
+                log e.toString() at INFO;
+            }
+
+            on VerticalCalibrated() as e {
+                log "Vertical calibrated: " + e.angle.toString() at INFO;
+                verticalCalibration := e;
+            }
+
+            on GrabberCalibrated() as e {
+                log "Grabber calibrated: " + e.closePosition.toString() at INFO;
+                grabberCalibration := e;
+            }
 
             on ArmRotationTargetReached() 
-                and ArmVerticalTargetReached()
+                and VerticalCalibrated()
                 and GrabberCalibrated()
             {
                 log "Calibrated" at INFO;
-                // TODO: reset motor encoders to 0
-                // TODO: Listen for colour sensor change events (? -> colour)
+                //startNormalOperation();
             }
         }
 
         route StartCalibration();
+    }
+
+    action startNormalOperation() {
+        // TODO: reset motor encoders to 0
+        // TODO: Is it possible to listen for events with any colour != UNKNOWN_COLOR?
 
         on all ColorSensorReading() as e {
             log e.toString() at INFO;
         }
+
+        on ColorSensorReading(color=ColorSensorReading.UNKNOWN_COLOR) 
+                -> ColorSensorReading(color="black") as e {
+            log "Color sensor transitioned from ? to black" at INFO;
+
+            // Stop for now, but in future probably a good idea to keep monitoring it
+            // to check that the sensor goes back to UNKNOWN when the arm has picked it up.
+            send StopPollingColorSensor() to Constants.SENSORS_CHANNEL;
+            
+            on PickedUpBiscuit() {
+                log "Picked up biscuit!!! nom nom nom" at INFO;
+                // rotate to correct position for color
+                // Lower arm
+                // open grabber
+                // return to start position
+            }
+
+            pickupBiscuit();
+        }
+
+        send StartPollingColorSensor(0.5, CHANNEL) to Constants.SENSORS_CHANNEL;
+        log "sent StartPollingColorSensor" at INFO;
+    }
+
+    action pickupBiscuit() {
+        // move arm down
+        moveArmDown(verticalCalibration.angle);
+        // close grabber
+        // move arm up
+        // route PickedUpBiscuit
+    }
+
+    action moveArmDown(integer targetAngle) {
+        on all GyroSensorReading() as e and not ArmVerticalTargetReached() {
+            log e.toString() at INFO;
+            if e.angle <= targetAngle {
+                send StopVerticalMotor() to Constants.MOTORS_CHANNEL;
+                send StopPollingGyroSensor() to Constants.SENSORS_CHANNEL;
+                log "moveArmDown: ArmVerticalTargetReached" at INFO;
+                route ArmVerticalTargetReached(e.angle);
+            }
+        }
+
+        send StartPollingGyroSensor(0.1, CHANNEL) to Constants.SENSORS_CHANNEL;
+        log "sent StartPollingGyroSensor" at INFO;
+
+        send StartVerticalMotor(90 * 5, 0.1, CHANNEL) to Constants.MOTORS_CHANNEL;
     }
 
     /**
@@ -101,25 +180,40 @@ monitor RobotArm {
 
         send StartVerticalMotor(90 * 5, 0.1, CHANNEL) to Constants.MOTORS_CHANNEL;
 
+        integer firstGyroAngle := -1;
+        integer lastGyroAngle := -1;
+
         // 0.5 second with no change in reading... stop!
         on all VerticalMotorReading() as reading and not ArmVerticalTargetReached() {
             log "got VerticalMotorReading: " + reading.toString() at INFO;
             on VerticalMotorReading(position=reading.position) 
                     -> VerticalMotorReading(position=reading.position) within(0.5) {
                 log "ArmVerticalTargetReached from motor readings" at INFO;
-                route ArmVerticalTargetReached();
+                route ArmVerticalTargetReached(lastGyroAngle);
             } // may create quite a number of listeners?
         }
 
-        on ArmVerticalTargetReached() {
+        on ArmVerticalTargetReached() as e {
             log "ArmVerticalTargetReached" at INFO;
             send StopVerticalMotor() to Constants.MOTORS_CHANNEL;
             send StopPollingGyroSensor() to Constants.SENSORS_CHANNEL;
+
+            // Was gyro sensor reading going up or down?
+            if (firstGyroAngle >= 0 and lastGyroAngle >= 0) {
+                if (lastGyroAngle < firstGyroAngle) {
+                    log "gyro angle goes down with arm" at INFO;
+                } else {
+                    log "gyro angle goes UP with arm (inverted)" at INFO;
+                }
+            }
+
+
             // Move arm back up
             on wait (1.0) {
 
-                on ArmVerticalTargetReached() {
+                on ArmVerticalTargetReached() as targetReached {
                     send StopVerticalMotor() to Constants.MOTORS_CHANNEL;
+                    route VerticalCalibrated(e.angle); // This is the angle when the arm had moved all the way down.
                     log "Arm vertical calibrated" at INFO;
                 }
 
@@ -128,18 +222,27 @@ monitor RobotArm {
                     on VerticalMotorReading(position=reading.position) 
                             -> VerticalMotorReading(position=reading.position) within(0.5) {
                         log "*** ArmVerticalTargetReached from motor readings" at INFO;
-                        route ArmVerticalTargetReached();
+                        route ArmVerticalTargetReached(lastGyroAngle);
                     } // may create quite a number of listeners?
                 }
 
-                send StartVerticalMotor(-45 * 5, 0.1, CHANNEL) to Constants.MOTORS_CHANNEL;
+                send StartVerticalMotor(-30 * 5, 0.1, CHANNEL) to Constants.MOTORS_CHANNEL;
             }
         }
 
-        on all GyroSensorReading() as e and not ArmVerticalTargetReached() {
-            on GyroSensorReading(angle=e.angle, acceleration=0) {
-                log "ArmVerticalTargetReached from gyro sensor" at INFO;
-                route ArmVerticalTargetReached();
+        
+        on GyroSensorReading() as e and not ArmVerticalTargetReached() {
+            firstGyroAngle := e.angle;
+        }
+
+        on all GyroSensorReading() as first and not ArmVerticalTargetReached() {
+            lastGyroAngle := first.angle;
+            log first.toString() at INFO;
+            on GyroSensorReading() as second {
+                if first.angle = second.angle and second.acceleration = 0 {
+                    log "ArmVerticalTargetReached from gyro sensor" at INFO;
+                    route ArmVerticalTargetReached(lastGyroAngle);
+                }
             }
         }
     }
