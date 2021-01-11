@@ -112,9 +112,9 @@ monitor Motors {
                 sequence<any> seq := <sequence<any>>reading.value;
                 integer flags := <integer>seq[0];
                 boolean overloaded := (flags and 0x01) != 0;  // TODO: Not sure if this is working
-                log "Overloaded? " + overloaded.toString() at INFO;
+                //log "Overloaded? " + overloaded.toString() at INFO;
                 integer position := <integer>seq[2];
-                log "Got vertical motor position " + position.toString() at INFO;
+                //log "Got vertical motor position " + position.toString() at INFO;
                 send VerticalMotorReading(position) to startEvent.destChannel;
                 boolean targetReached := overloaded;
                 if startEvent.targetPosRelative >= 0 {
@@ -170,13 +170,13 @@ monitor Motors {
 
             // Listen for BP action responses...
             on all BrickPiActionResult() as reading and not StopClawMotor() {
-                log reading.toString() at INFO;
+                //log reading.toString() at INFO;
                 sequence<any> seq := <sequence<any>>reading.value;
                 integer flags := <integer>seq[0];
                 boolean overloaded := (flags and 0x01) != 0;  // TODO: Not sure if this is working
-                log "Overloaded? " + overloaded.toString() at INFO;
+                //log "Overloaded? " + overloaded.toString() at INFO;
                 integer position := <integer>seq[2];
-                log "Got claw motor position " + position.toString() at INFO;
+                //log "Got claw motor position " + position.toString() at INFO;
                 send ClawMotorReading(position) to startEvent.destChannel;
                 boolean targetReached := overloaded;
                 if startEvent.targetPosRelative >= 0 {
